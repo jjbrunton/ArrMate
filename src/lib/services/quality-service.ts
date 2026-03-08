@@ -265,7 +265,7 @@ export function getQualitySearchLogItems(
 
     const labelMap = new Map(rows.map((row) => [
       row.id,
-      formatQualitySearchRecordLabel(instanceType, row),
+      formatQualitySearchRecordLabel(instanceType, { ...row, year: row.year ?? undefined }),
     ]));
 
     return itemIds.map((itemId) => ({
