@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect x="4" y="4" width="56" height="56" rx="18" fill="#071722" />
+  <rect
+    x="4.75"
+    y="4.75"
+    width="54.5"
+    height="54.5"
+    rx="17.25"
+    stroke="#67E8F9"
+    stroke-opacity="0.2"
+    stroke-width="1.5"
+  />
+  <path d="M16 45L27 17H33L22 45H16Z" fill="#67E8F9" />
+  <path d="M29 45L39 22H45L35 45H29Z" fill="#67E8F9" fill-opacity="0.78" />
+  <path d="M41 45L50 27H56L47 45H41Z" fill="#67E8F9" fill-opacity="0.48" />
+</svg>

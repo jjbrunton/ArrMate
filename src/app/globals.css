@@ -1,8 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #07101d;
+  --background-rgb: 7 16 29;
+  --foreground: #eff6ff;
+  --muted: #93a7c5;
+  --muted-strong: #c7d6ea;
+  --surface-0: rgba(4, 10, 20, 0.82);
+  --surface-1: rgba(11, 21, 37, 0.9);
+  --surface-2: rgba(14, 28, 48, 0.94);
+  --surface-3: rgba(21, 40, 68, 0.96);
+  --border-subtle: rgba(148, 163, 184, 0.14);
+  --border-strong: rgba(125, 211, 252, 0.24);
+  --accent: #43d2ff;
+  --accent-strong: #0ea5e9;
+  --accent-soft: rgba(67, 210, 255, 0.14);
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.14);
+  --critical: #fb7185;
+  --critical-soft: rgba(251, 113, 133, 0.14);
+  --info: #7dd3fc;
+  --info-soft: rgba(125, 211, 252, 0.14);
+  --shadow-ambient: 0 24px 80px rgba(2, 6, 23, 0.48);
+  --shadow-glow: 0 0 0 1px rgba(255, 255, 255, 0.02), 0 22px 44px rgba(2, 6, 23, 0.36);
+  --radius-panel: 1.25rem;
+  --radius-control: 0.95rem;
 }
 
 @theme inline {
@@ -12,15 +36,184 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border-subtle);
+}
+
+html {
+  background: var(--background);
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(67, 210, 255, 0.14), transparent 24rem),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.11), transparent 20rem),
+    radial-gradient(circle at 50% 120%, rgba(52, 211, 153, 0.1), transparent 32rem),
+    linear-gradient(180deg, #0b1423 0%, #07101d 52%, #050b15 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+  letter-spacing: -0.01em;
+}
+
+body::before,
+body::after {
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+  z-index: -1;
+}
+
+body::before {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(67, 210, 255, 0.07), transparent 0 18rem),
+    radial-gradient(circle at 85% 15%, rgba(14, 165, 233, 0.08), transparent 0 20rem),
+    radial-gradient(circle at 50% 100%, rgba(52, 211, 153, 0.06), transparent 0 26rem);
+  filter: blur(20px);
+}
+
+body::after {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+  background-size: 120px 120px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.9));
+  opacity: 0.36;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+::selection {
+  background: rgba(67, 210, 255, 0.22);
+  color: var(--foreground);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--foreground);
+  letter-spacing: -0.03em;
+}
+
+p {
+  color: var(--muted);
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-panel {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  background: linear-gradient(180deg, rgba(16, 28, 46, 0.88), rgba(8, 16, 28, 0.96));
+  box-shadow: var(--shadow-glow);
+  backdrop-filter: blur(18px);
+}
+
+.app-panel-strong {
+  border: 1px solid var(--border-strong);
+  border-radius: calc(var(--radius-panel) + 0.1rem);
+  background:
+    linear-gradient(180deg, rgba(15, 29, 49, 0.96), rgba(7, 15, 28, 0.98)),
+    linear-gradient(120deg, rgba(67, 210, 255, 0.08), transparent 42%);
+  box-shadow: var(--shadow-ambient);
+  backdrop-filter: blur(22px);
+}
+
+.app-panel-muted {
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: calc(var(--radius-panel) - 0.15rem);
+  background: rgba(8, 14, 26, 0.72);
+  backdrop-filter: blur(14px);
+}
+
+.app-eyebrow {
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.app-stat-chip {
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 999px;
+  background: rgba(8, 15, 28, 0.72);
+  color: var(--muted-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.85rem;
+}
+
+.app-status-dot {
+  border-radius: 999px;
+  box-shadow: 0 0 18px currentColor;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.app-control-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-table-row {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.app-table-row:hover {
+  background: rgba(18, 33, 54, 0.45);
+}
+
+.app-empty-state {
+  border: 1px dashed rgba(148, 163, 184, 0.18);
+  border-radius: var(--radius-panel);
+  background: rgba(8, 14, 26, 0.5);
+}
+
+@media (max-width: 767px) {
+  body::after {
+    background-size: 72px 72px;
+    opacity: 0.22;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(7, 16, 29, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(67, 210, 255, 0.18);
+  border: 2px solid rgba(7, 16, 29, 0.9);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(67, 210, 255, 0.32);
 }

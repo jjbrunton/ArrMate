@@ -1,0 +1,1 @@
+ALTER TABLE `queue_items` ADD `output_path` text;

@@ -1,0 +1,1 @@
+ALTER TABLE `instances` ADD `last_polled_at` text;

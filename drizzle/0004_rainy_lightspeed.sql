@@ -1,0 +1,1 @@
+ALTER TABLE `instances` ADD `auto_fix` integer DEFAULT false NOT NULL;
