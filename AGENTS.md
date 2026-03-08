@@ -68,6 +68,73 @@ If documentation contradicts the code, **fix the documentation** — the code is
 
 ---
 
+## Mandatory: Software Engineering Best Practices
+
+**All code changes MUST adhere to these principles:**
+
+### SOLID Principles
+- **Single Responsibility**: Each module, class, and function should have one reason to change. Don't add unrelated logic to existing files — create a new module instead.
+- **Open/Closed**: Extend behaviour through new rules, handlers, or strategies rather than modifying existing ones. The issue detection rule system is a good example — add new rule files, don't bloat existing ones.
+- **Liskov Substitution**: Subtypes and interface implementations must be interchangeable without breaking callers.
+- **Interface Segregation**: Keep interfaces focused. Don't force consumers to depend on methods they don't use.
+- **Dependency Inversion**: Depend on abstractions, not concretions. Services should accept dependencies (DB, clients) via injection rather than importing singletons directly in non-entry-point code.
+
+### KISS & Pragmatism
+- Prefer the simplest solution that meets the requirement. Don't over-abstract.
+- Three similar lines of code is better than a premature abstraction.
+- Avoid unnecessary layers of indirection — if a function just forwards to another function, consider removing the wrapper.
+- Don't add configurability, feature flags, or extension points unless they're needed now.
+
+### Inversion of Control
+- Business logic should not directly instantiate its own dependencies. Pass dependencies in (constructor injection, function parameters) so code is testable and decoupled.
+- Entry points (API routes, scheduler jobs) are responsible for wiring up dependencies — deeper layers should receive them.
+
+### General
+- Follow existing patterns in the codebase. Consistency trumps personal preference.
+- Name things clearly — a good name removes the need for a comment.
+- Keep functions short and focused. If a function needs a comment explaining a section, that section should probably be its own function.
+- Avoid premature optimisation. Write clear code first, optimise only when measured.
+
+---
+
+## Mandatory: Security
+
+**All code MUST be reviewed for security issues before committing. Follow OWASP guidelines.**
+
+### Input Validation & Injection Prevention
+- **SQL Injection**: Always use Drizzle ORM's parameterised queries. Never concatenate user input into raw SQL strings. If raw SQL is absolutely required, use parameterised placeholders.
+- **Command Injection**: Never pass user input to `child_process.exec()` or shell commands. Use `execFile()` with explicit argument arrays if shell interaction is needed.
+- **XSS (Cross-Site Scripting)**: Never use `dangerouslySetInnerHTML` with user-supplied content. React escapes by default — don't bypass it. Sanitise any content rendered from external APIs (Sonarr/Radarr responses).
+- **Path Traversal**: Validate and sanitise any user-supplied file paths. Never use user input directly in `fs` operations.
+
+### Authentication & Secrets
+- API keys are encrypted at rest with AES-256-GCM — maintain this pattern for any new secrets.
+- Never log secrets, API keys, or tokens. Mask them in error messages.
+- Never commit `.env` files, credentials, or secrets to the repository.
+- Validate the `ENCRYPTION_KEY` environment variable is present at startup.
+
+### API Security
+- Validate all request bodies with Zod schemas at API route boundaries. Reject invalid input early.
+- Return appropriate HTTP status codes — don't leak internal error details in responses (use generic messages for 500s).
+- Apply rate limiting or request size limits where appropriate for public-facing endpoints.
+
+### Dependency & Supply Chain
+- Don't add new dependencies without justification. Prefer built-in Node.js APIs or existing dependencies.
+- Review changelogs/security advisories before upgrading dependencies.
+- Keep `package-lock.json` committed and up to date.
+
+### Data Handling
+- Use the principle of least privilege — only request the data and permissions you need.
+- Sanitise and validate data at system boundaries (user input, external API responses).
+- Don't trust data from Sonarr/Radarr APIs blindly — validate structure before using it.
+
+### Before Committing
+- Review your diff for hardcoded secrets, exposed credentials, or debug code.
+- Verify no new `eval()`, `Function()`, or dynamic code execution has been introduced.
+- Confirm all user inputs flow through validation before reaching business logic or the database.
+
+---
+
 ## Build & Dev
 
 - **Node.js v25**: Use `node node_modules/next/dist/bin/next build` (not `npx next build`)
