@@ -2,11 +2,10 @@ import { createHmac, randomBytes } from "crypto";
 import type { NextRequest, NextResponse } from "next/server";
 import { getAuthSessionSecret } from "./config";
 
-const DEV_COOKIE_NAME = "arrmate_session";
-const PROD_COOKIE_NAME = "__Host-arrmate_session";
+const COOKIE_NAME = "arrmate_session";
 
 export function getSessionCookieName() {
-  return process.env.NODE_ENV === "production" ? PROD_COOKIE_NAME : DEV_COOKIE_NAME;
+  return COOKIE_NAME;
 }
 
 export function createSessionToken() {
@@ -17,13 +16,17 @@ export function hashSessionToken(token: string) {
   return createHmac("sha256", getAuthSessionSecret()).update(token).digest("hex");
 }
 
+function useSecureCookies() {
+  return process.env.SECURE_COOKIES === "true";
+}
+
 export function setSessionCookie(response: NextResponse, token: string, expiresAt: Date) {
   response.cookies.set({
     name: getSessionCookieName(),
     value: token,
     httpOnly: true,
     sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    secure: useSecureCookies(),
     path: "/",
     expires: expiresAt,
   });
@@ -35,7 +38,7 @@ export function clearSessionCookie(response: NextResponse) {
     value: "",
     httpOnly: true,
     sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    secure: useSecureCookies(),
     path: "/",
     expires: new Date(0),
   });

@@ -51,12 +51,8 @@ Sessions are opaque, server-side, and revocable.
 - Cookie value: a random 32-byte token encoded as base64url.
 - Stored value: `HMAC-SHA256(token, session secret)` in `auth_sessions.token_hash`.
 - TTL: fixed 24 hours from login or onboarding.
-- Cookie flags: `HttpOnly`, `SameSite=Strict`, `Path=/`, and `Secure` in production.
-- Cookie name:
-  - Development: `arrmate_session`
-  - Production: `__Host-arrmate_session`
-
-In production the `__Host-` prefix intentionally prevents setting a `Domain` attribute and requires `Secure`, which keeps the cookie scoped to the current host over HTTPS.
+- Cookie flags: `HttpOnly`, `SameSite=Strict`, `Path=/`. The `Secure` flag is only set when `SECURE_COOKIES=true` is configured (for deployments behind HTTPS).
+- Cookie name: `arrmate_session`
 
 Expired sessions are cleaned up during authentication operations before active-session lookups or new-session creation.
 
