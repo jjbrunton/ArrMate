@@ -3,6 +3,8 @@ import { LoginForm } from "@/components/auth/login-form";
 import { getPageSession } from "@/lib/auth/request";
 import { getAuthConfigurationStatus } from "@/lib/services/auth-service";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
   const status = getAuthConfigurationStatus();
 

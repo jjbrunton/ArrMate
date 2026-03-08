@@ -2,6 +2,8 @@ import { getPageSession } from "@/lib/auth/request";
 import { getAuthConfigurationStatus } from "@/lib/services/auth-service";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const authStatus = getAuthConfigurationStatus();
 
