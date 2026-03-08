@@ -17,6 +17,18 @@ describe("auth request helpers", () => {
     const request = new NextRequest("http://localhost:3000/api/issues", {
       headers: {
         origin: "http://localhost:3000",
+        host: "localhost:3000",
+      },
+    });
+
+    expect(ensureSameOrigin(request)).toBeNull();
+  });
+
+  it("accepts LAN requests where origin host matches host header", () => {
+    const request = new NextRequest("http://localhost:3000/api/issues", {
+      headers: {
+        origin: "http://192.168.0.5:3003",
+        host: "192.168.0.5:3003",
       },
     });
 

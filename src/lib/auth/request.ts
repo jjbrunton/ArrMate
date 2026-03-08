@@ -24,7 +24,18 @@ export function ensureSameOrigin(request: NextRequest) {
     return "Missing Origin header";
   }
 
-  return origin === request.nextUrl.origin ? null : "Invalid request origin";
+  const host = request.headers.get("host");
+
+  try {
+    const originHost = new URL(origin).host;
+    if (originHost === host) {
+      return null;
+    }
+  } catch {
+    // invalid origin URL
+  }
+
+  return "Invalid request origin";
 }
 
 export async function getPageSession() {
