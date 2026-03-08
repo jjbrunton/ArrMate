@@ -56,6 +56,8 @@ src/lib/
 │   ├── job-tracker.test.ts    # Running-state and concurrency guards
 │   └── jobs/
 │       └── quality-check.test.ts # Upgrade-search cooldown and per-run quality batch behavior
+├── security/
+│   └── security.test.ts       # Security regression tests (encryption, auth bypass, key leakage, sessions, error messages)
 ├── test-utils/
 │   ├── fixtures.ts             # makeQueueItem, makeContext, makeInstance, etc.
 │   └── mock-arr-client.ts      # Mock ArrClient with vi.fn() stubs
@@ -87,3 +89,15 @@ Keep the `CREATE_SQL` schema in this test synchronized with `src/lib/db/schema.t
 
 ### Mock ArrClient
 `createMockArrClient()` returns an object with all ArrClient methods as `vi.fn()` stubs with default return values.
+
+### Security Tests
+`security.test.ts` is a dedicated security regression test suite that guards against common security regressions. It uses in-memory SQLite with real crypto (not mocked) and covers:
+
+- **Encryption integrity** — unique IVs, no plaintext leakage, GCM auth tag validation, DB storage verification
+- **API key stripping** — `toPublic()` removes `apiKey` from all instance-service responses
+- **Authentication bypass** — empty credentials, oversized inputs, wrong-user-right-password, per-IP rate limiting
+- **Password hashing** — unique salts, correct format, edge cases (empty, unicode)
+- **Session security** — token entropy, HMAC hashing, session expiry enforcement
+- **Error message leakage** — generic auth failure messages, security headers on all responses
+
+If a commit accidentally weakens input validation, encryption, auth, or information leakage defenses, these tests will fail.
