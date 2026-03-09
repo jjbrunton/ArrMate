@@ -45,6 +45,7 @@ All database access goes through services. Main services:
 - **issue-service** — Issue lifecycle (persist, dismiss, resolve), audit log, dashboard stats
 - **media-cache-service** — Cache and query library data (movies, series, episodes). Media sync preserves persisted quality snapshot fields so rebuilding the cache does not temporarily reset the quality page.
 - **request-service** — Sync and query imported Overseerr requests plus local request summary stats
+- **update-service** — Reads the running app build metadata, checks the configured GitHub repository's latest release, caches release-note lookups in-memory, and exposes update/changelog status to the authenticated UI
 - **auth-service** — First-run onboarding state, persisted admin credential verification, account profile lookup, password rotation, brute-force throttling, and server-side session issue/revoke flows
 
 ### Instance Type Registry (`src/lib/instances/`)
@@ -55,6 +56,9 @@ Instance metadata lives in a small registry that defines which capabilities each
 - **api-response** — Standardized JSON response helpers for API routes.
 - **logger** — Structured logging via pino.
 - **cn** — Tailwind CSS class merging utility.
+
+### App Metadata (`src/lib/app/`)
+Small server-side helpers that expose build metadata such as the running ArrMate version, commit SHA, and the GitHub repository used for release-note lookups. Docker builds inject these values when available, while local development falls back to `package.json`.
 
 ### Fix Execution (`src/lib/issues/fix-executor.ts`)
 Centralizes the logic for executing fixes against the Arr API, recording results, and writing audit logs. Used by:
@@ -88,7 +92,7 @@ Authentication persistence uses three tables: `auth_admin` for the single persis
 The username and password hash are created during first-run onboarding and stored in SQLite. The session-signing secret is loaded from `AUTH_SESSION_SECRET` when provided, otherwise ArrMate generates and persists one alongside the SQLite database on first launch. The API-key encryption key follows the same persisted-secret pattern: `ENCRYPTION_KEY` is still accepted for compatibility, but if no persisted key file exists ArrMate generates one beside the SQLite database and, when an older env-provided key is available, re-encrypts stored instance API keys onto the new persisted key during startup.
 
 ### Delivery Pipeline
-GitHub Actions can build and publish the production Docker image to GitHub Container Registry (GHCR). The workflow runs the full Vitest suite before publishing, and emits multi-architecture (`linux/amd64`, `linux/arm64`) images so the same tags can be pulled directly onto typical x86_64 or ARM Docker hosts. See [Deployment](./deployment.md).
+GitHub Actions can build and publish the production Docker image to GitHub Container Registry (GHCR). The workflow runs the full Vitest suite before publishing, emits multi-architecture (`linux/amd64`, `linux/arm64`) images so the same tags can be pulled directly onto typical x86_64 or ARM Docker hosts, injects build metadata (`APP_VERSION`, `APP_COMMIT_SHA`, `APP_RELEASE_REPOSITORY`) so the authenticated UI can compare the running build against the latest GitHub release, and creates GitHub Releases for commits that land on `main`. See [Deployment](./deployment.md).
 
 ## Key Design Decisions
 

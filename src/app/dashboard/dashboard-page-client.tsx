@@ -1,5 +1,6 @@
 "use client";
 
+import { AppUpdateNotifier } from "@/components/app/app-update-notifier";
 import { StatsOverview } from "@/components/dashboard/stats-overview";
 import { InstanceOverviewCards } from "@/components/dashboard/instance-overview-cards";
 import { RecentMediaManagementRequests } from "@/components/dashboard/recent-media-management-requests";
@@ -15,6 +16,8 @@ export default function DashboardPage() {
       />
 
       <StatsOverview />
+
+      <AppUpdateNotifier variant="full" />
 
       <InstanceOverviewCards />
 

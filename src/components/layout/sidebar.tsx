@@ -8,6 +8,7 @@ import {
   ScrollText,
   Server,
 } from "lucide-react";
+import { AppUpdateNotifier } from "@/components/app/app-update-notifier";
 import { AccountPanel } from "@/components/auth/account-panel";
 import { Logo } from "@/components/layout/logo";
 import { cn } from "@/lib/utils/cn";
@@ -70,6 +71,7 @@ export function Sidebar() {
             );
           })}
         </nav>
+        <AppUpdateNotifier />
         <AccountPanel />
       </aside>
 

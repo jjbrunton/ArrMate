@@ -8,8 +8,10 @@ ArrMate publishes a multi-architecture container image to GitHub Container Regis
 
 - Pull requests targeting `main` or `master` run the test suite and verify the Docker build, but do not push an image
 - Pushes to `main` or `master` run `npm test`, build a `linux/amd64` + `linux/arm64` image, and publish it to `ghcr.io/<owner>/<repo>`
+- Pushes to `main` also create a GitHub Release tagged as `v<package-version>-main.<commit-epoch>` for that exact commit, with GitHub-generated release notes
 - Tags matching `v*` publish versioned image tags alongside the commit SHA tag
 - The default branch also publishes `:latest`
+- Published images embed `APP_VERSION`, `APP_COMMIT_SHA`, and `APP_RELEASE_REPOSITORY` so the ArrMate UI can show the installed version, compare it against GitHub Releases, and display release notes to authenticated users
 
 ### Registry Authentication
 
@@ -45,6 +47,8 @@ services:
       - "3000:3000"
     environment:
       DB_PATH: /app/data/arrmate.db
+      # Optional: point the release notifier at a fork instead of the upstream repo
+      # APP_RELEASE_REPOSITORY: jjbrunton/ArrMate
     volumes:
       - arrmate-data:/app/data
     restart: unless-stopped

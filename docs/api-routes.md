@@ -53,4 +53,5 @@ All routes except `POST /api/auth/setup`, `POST /api/auth/login`, and `POST /api
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/logs` | Recent audit log (`?limit`, `?afterId`, repeated `?action=` filters supported so dashboards can request slices such as only `quality_search_sent` events) |
+| GET | `/api/app/update` | Return the running ArrMate version, latest GitHub release metadata, update availability flag, and release notes for the notifier UI |
 | GET | `/api/health` | Health check + dashboard stats for authenticated dashboards |

@@ -50,7 +50,10 @@ src/lib/
 │   ├── integration.test.ts     # Full service tests with in-memory SQLite
 │   ├── media-cache-service.test.ts # Cache rebuilds preserve persisted quality snapshot fields
 │   ├── quality-service.test.ts # Quality snapshot persistence, local pagination, summaries, and upgrade-search history
-│   └── request-service.test.ts # Imported Overseerr request sync, stats, and stale-row cleanup
+│   ├── request-service.test.ts # Imported Overseerr request sync, stats, and stale-row cleanup
+│   └── update-service.test.ts # GitHub release parsing, version comparison, and cache behavior for the update notifier
+├── app/
+│   └── version.test.ts         # Build metadata fallback to package version plus env override coverage
 ├── scheduler/
 │   ├── index.test.ts          # Immediate priming for newly created instances vs steady-state startup scheduling
 │   ├── job-tracker.test.ts    # Running-state and concurrency guards
