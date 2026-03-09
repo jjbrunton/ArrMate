@@ -285,10 +285,42 @@ export function writeAuditLog(entry: {
 
 export function getRecentAuditLog(limit = 100, afterId?: number) {
   const db = getDb();
-
   const conditions = afterId
     ? gt(auditLog.id, afterId)
     : undefined;
+
+  return db
+    .select({
+      id: auditLog.id,
+      instanceId: auditLog.instanceId,
+      instanceName: instances.name,
+      instanceType: instances.type,
+      issueId: auditLog.issueId,
+      action: auditLog.action,
+      source: auditLog.source,
+      details: auditLog.details,
+      createdAt: auditLog.createdAt,
+    })
+    .from(auditLog)
+    .leftJoin(instances, eq(auditLog.instanceId, instances.id))
+    .where(conditions)
+    .orderBy(desc(auditLog.id))
+    .limit(limit)
+    .all();
+}
+
+export function getRecentAuditLogByActions(actions: string[], limit = 100, afterId?: number) {
+  const db = getDb();
+
+  const normalizedActions = Array.from(new Set(actions.filter((action) => action.trim().length > 0)));
+  if (normalizedActions.length === 0) {
+    return getRecentAuditLog(limit, afterId);
+  }
+
+  const conditions = and(
+    inArray(auditLog.action, normalizedActions),
+    afterId ? gt(auditLog.id, afterId) : undefined,
+  );
 
   return db
     .select({
