@@ -14,6 +14,7 @@ Vitest with v8 coverage. Config at `vitest.config.ts`. Tests are mandatory — s
 
 ```
 src/lib/
+├── quality-check-strategy.test.ts # Media-management ordering strategies and deterministic randomization
 ├── auth/
 │   ├── config.test.ts         # Auth environment validation for the session secret
 │   ├── password.test.ts       # Scrypt hash/verify coverage
@@ -56,9 +57,10 @@ src/lib/
 │   └── version.test.ts         # Build metadata fallback to package version plus env override coverage
 ├── scheduler/
 │   ├── index.test.ts          # Immediate priming for newly created instances vs steady-state startup scheduling
-│   ├── job-tracker.test.ts    # Running-state and concurrency guards
+│   ├── job-tracker.test.ts    # Running-state and concurrency guards, including shared quality-search locks
 │   └── jobs/
-│       └── quality-check.test.ts # Upgrade-search cooldown and per-run quality batch behavior
+│       ├── quality-check.test.ts # Upgrade-search cooldown, shared search locking, and per-run quality batch behavior
+│       └── sync-media-cache.test.ts # Empty-response guards prevent cache wipes
 ├── security/
 │   └── security.test.ts       # Security regression tests (encryption, auth bypass, key leakage, sessions, error messages)
 ├── test-utils/

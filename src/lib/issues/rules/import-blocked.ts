@@ -115,10 +115,10 @@ export const importBlockedRule: IssueRule = {
         suggestedFixes: [
           {
             action: "force_import",
-            label: "Manual import",
-            description: "Open the *arr UI to resolve the import manually",
+            label: "Force import",
+            description: "Force import the downloaded files into the library",
             priority: 1,
-            automatable: false,
+            automatable: true,
           },
           {
             action: "remove_and_blocklist",

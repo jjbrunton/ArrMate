@@ -14,6 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { getInstanceDefinition, INSTANCE_TYPE_VALUES, type InstanceType } from "@/lib/instances/definitions";
+import {
+  DEFAULT_QUALITY_CHECK_STRATEGY,
+  QUALITY_CHECK_STRATEGY_OPTIONS,
+  type QualityCheckStrategy,
+} from "@/lib/quality-check-strategy";
 import { ConnectionTest } from "./connection-test";
 
 interface InstanceFormProps {
@@ -25,7 +30,9 @@ interface InstanceFormProps {
     type: InstanceType;
     baseUrl: string;
     pollIntervalSeconds: number;
+    qualityCheckIntervalSeconds: number;
     qualityCheckMaxItems: number;
+    qualityCheckStrategy: QualityCheckStrategy;
     requestSyncIntervalSeconds: number | null;
   };
 }
@@ -42,8 +49,14 @@ export function InstanceForm({ open, onOpenChange, instance }: InstanceFormProps
   const [pollInterval, setPollInterval] = useState(
     String((instance?.pollIntervalSeconds ?? 300) / 60),
   );
+  const [qualityCheckInterval, setQualityCheckInterval] = useState(
+    String((instance?.qualityCheckIntervalSeconds ?? 1800) / 60),
+  );
   const [qualityCheckMaxItems, setQualityCheckMaxItems] = useState(
     String(instance?.qualityCheckMaxItems ?? 50),
+  );
+  const [qualityCheckStrategy, setQualityCheckStrategy] = useState<QualityCheckStrategy>(
+    instance?.qualityCheckStrategy ?? DEFAULT_QUALITY_CHECK_STRATEGY,
   );
   const [requestSyncInterval, setRequestSyncInterval] = useState(
     String(((instance?.requestSyncIntervalSeconds ?? 300) || 300) / 60),
@@ -59,7 +72,9 @@ export function InstanceForm({ open, onOpenChange, instance }: InstanceFormProps
       };
       if (definition.supportsQueue) {
         body.pollIntervalSeconds = Number(pollInterval) * 60;
+        body.qualityCheckIntervalSeconds = Number(qualityCheckInterval) * 60;
         body.qualityCheckMaxItems = Number(qualityCheckMaxItems);
+        body.qualityCheckStrategy = qualityCheckStrategy;
       }
       if (definition.supportsRequestSync) {
         body.requestSyncIntervalSeconds = Number(requestSyncInterval) * 60;
@@ -173,6 +188,17 @@ export function InstanceForm({ open, onOpenChange, instance }: InstanceFormProps
               </div>
 
               <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Quality Check Interval (minutes)</label>
+                <Input
+                  type="number"
+                  value={qualityCheckInterval}
+                  onChange={(e) => setQualityCheckInterval(e.target.value)}
+                  min="5"
+                  max="1440"
+                />
+              </div>
+
+              <div>
                 <label className="mb-2 block text-sm font-medium text-slate-200">Quality Checks Per Run</label>
                 <Input
                   type="number"
@@ -181,6 +207,30 @@ export function InstanceForm({ open, onOpenChange, instance }: InstanceFormProps
                   min="1"
                   max="500"
                 />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Media Management Strategy</label>
+                <Select
+                  value={qualityCheckStrategy}
+                  onValueChange={(value) => setQualityCheckStrategy(value as QualityCheckStrategy)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {QUALITY_CHECK_STRATEGY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-2 text-xs text-slate-500">
+                  {
+                    QUALITY_CHECK_STRATEGY_OPTIONS.find((option) => option.value === qualityCheckStrategy)?.description
+                  }
+                </p>
               </div>
             </>
           ) : null}

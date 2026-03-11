@@ -3,7 +3,6 @@ import type { SuggestedFix, Instance } from "../db/schema";
 import type { IssueWithFixes } from "../services/issue-service";
 import { getQueueItemByExternalId } from "../services/queue-service";
 import { markFixExecuted, resolveIssue, writeAuditLog } from "../services/issue-service";
-import { invalidateMediaCache } from "../services/media-cache-service";
 import { executeFix } from "./fixes";
 import type { FixAction } from "./types";
 
@@ -24,7 +23,7 @@ export function buildFixParams(
   externalQueueId: number,
 ): Record<string, unknown> {
   const fixParams: Record<string, unknown> = fix.params ? JSON.parse(fix.params) : {};
-  if (fix.action === "select_movie_import") {
+  if (fix.action === "select_movie_import" || fix.action === "force_import") {
     const queueItem = getQueueItemByExternalId(instanceId, externalQueueId);
     if (queueItem?.downloadId) fixParams.downloadId = queueItem.downloadId;
     if (queueItem?.outputPath) fixParams.outputPath = queueItem.outputPath;
@@ -71,9 +70,6 @@ export async function executeAndRecordFix(
 
   if (result.success) {
     resolveIssue(issue.id);
-    if (fix.action === "select_movie_import") {
-      invalidateMediaCache(instance.id);
-    }
   }
 
   writeAuditLog({

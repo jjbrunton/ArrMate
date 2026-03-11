@@ -1,0 +1,1 @@
+ALTER TABLE `instances` ADD `quality_check_interval_seconds` integer DEFAULT 1800 NOT NULL;

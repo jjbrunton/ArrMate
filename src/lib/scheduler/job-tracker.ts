@@ -2,7 +2,13 @@ import { createLogger } from "../utils/logger";
 
 const log = createLogger("job-tracker");
 
-export type JobType = "poll" | "sync-media" | "health-check" | "quality-check" | "sync-requests";
+export type JobType =
+  | "poll"
+  | "sync-media"
+  | "health-check"
+  | "quality-check"
+  | "quality-search"
+  | "sync-requests";
 
 /** In-memory set of currently running jobs, keyed by "instanceId:jobType" */
 const runningJobs = new Set<string>();

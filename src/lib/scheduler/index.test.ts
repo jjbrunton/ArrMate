@@ -86,6 +86,12 @@ describe("scheduler", () => {
     await scheduleNewInstance(instance.id);
 
     expect(mocks.scheduleMock).toHaveBeenCalledTimes(4);
+    expect(mocks.scheduleMock.mock.calls.map((call) => call[0])).toEqual([
+      "*/5 * * * *",
+      "*/5 * * * *",
+      "*/30 * * * *",
+      "*/60 * * * *",
+    ]);
     expect(mocks.runExclusiveMock).toHaveBeenCalledTimes(4);
     expect(mocks.runExclusiveMock.mock.calls.map((call) => call[1]).sort()).toEqual([
       "health-check",
@@ -97,6 +103,22 @@ describe("scheduler", () => {
     expect(mocks.pollQueueMock).toHaveBeenCalledWith(instance);
     expect(mocks.runQualityChecksMock).toHaveBeenCalledWith(instance);
     expect(mocks.syncMediaCacheMock).toHaveBeenCalledWith(instance);
+  });
+
+  it("uses the configured quality check interval when scheduling Arr tasks", async () => {
+    const instance = makeInstance({
+      id: 12,
+      type: "sonarr",
+      baseUrl: "http://localhost:8989",
+      qualityCheckIntervalSeconds: 2700,
+    });
+    mocks.storedInstances = [instance];
+
+    const { scheduleNewInstance } = await import("./index");
+
+    await scheduleNewInstance(instance.id);
+
+    expect(mocks.scheduleMock.mock.calls.map((call) => call[0])).toContain("*/45 * * * *");
   });
 
   it("schedules a new Overseerr instance immediately and primes request sync once", async () => {

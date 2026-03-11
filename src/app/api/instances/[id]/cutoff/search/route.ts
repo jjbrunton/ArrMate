@@ -9,6 +9,7 @@ import {
   partitionQualitySearchableItemIds,
   recordQualitySearch,
 } from "@/lib/services/quality-service";
+import { isJobRunning, runExclusive } from "@/lib/scheduler/job-tracker";
 import { success, error } from "@/lib/utils/api-response";
 import { isArrInstanceType } from "@/lib/instances/definitions";
 import { createLogger } from "@/lib/utils/logger";
@@ -29,6 +30,7 @@ export const POST = withApiAuth(async (
     if (!isArrInstanceType(instance.type)) {
       return error("Quality searches are only available for Sonarr and Radarr instances", 400);
     }
+    const instanceType = instance.type;
 
     const body = await req.json();
     const parsed = bodySchema.safeParse(body);
@@ -36,44 +38,77 @@ export const POST = withApiAuth(async (
       return error(parsed.error.issues.map((i) => i.message).join(", "), 400);
     }
 
-    const now = new Date();
-    const { searchableIds, skippedIds } = partitionQualitySearchableItemIds(
-      instance.id,
-      instance.type,
-      parsed.data.ids,
-      now,
-    );
-
-    if (searchableIds.length === 0) {
-      return success({
-        sent: false,
-        searchedIds: [],
-        skippedIds,
-        command: null,
-      });
+    if (isJobRunning(instance.id, "quality-search")) {
+      return error("A quality search is already running for this instance", 409);
     }
 
-    const apiKey = decrypt(instance.apiKey);
-    const client = new ArrClient(instance.baseUrl, apiKey, instance.type);
-    const requestedItems = getQualitySearchLogItems(instance.id, instance.type, searchableIds);
-    log.info(
-      {
-        instanceId: instance.id,
-        source: "user",
-        requestedCount: requestedItems.length,
-        requestedItems,
-        skippedIds,
-      },
-      "Sending upgrade search requests",
-    );
-    const result = await client.searchForUpgrade(searchableIds);
-    recordQualitySearch(instance.id, searchableIds, "user", result);
+    let responseData:
+      | {
+          sent: false;
+          searchedIds: number[];
+          skippedIds: number[];
+          command: null;
+        }
+      | {
+          sent: true;
+          searchedIds: number[];
+          skippedIds: number[];
+          command: Awaited<ReturnType<ArrClient["searchForUpgrade"]>>;
+        }
+      | null = null;
 
-    return success({
-      sent: true,
-      searchedIds: searchableIds,
-      skippedIds,
-      command: result,
+    const ran = await runExclusive(instance.id, "quality-search", async () => {
+      const now = new Date();
+      const { searchableIds, skippedIds } = partitionQualitySearchableItemIds(
+        instance.id,
+        instanceType,
+        parsed.data.ids,
+        now,
+      );
+
+      if (searchableIds.length === 0) {
+        responseData = {
+          sent: false,
+          searchedIds: [],
+          skippedIds,
+          command: null,
+        };
+        return;
+      }
+
+      const apiKey = decrypt(instance.apiKey);
+      const client = new ArrClient(instance.baseUrl, apiKey, instanceType);
+      const requestedItems = getQualitySearchLogItems(instance.id, instanceType, searchableIds);
+      log.info(
+        {
+          instanceId: instance.id,
+          source: "user",
+          requestedCount: requestedItems.length,
+          requestedItems,
+          skippedIds,
+        },
+        "Sending upgrade search requests",
+      );
+      const result = await client.searchForUpgrade(searchableIds);
+      recordQualitySearch(instance.id, searchableIds, "user", result);
+
+      responseData = {
+        sent: true,
+        searchedIds: searchableIds,
+        skippedIds,
+        command: result,
+      };
+    });
+
+    if (!ran) {
+      return error("A quality search is already running for this instance", 409);
+    }
+
+    return success(responseData ?? {
+      sent: false,
+      searchedIds: [],
+      skippedIds: [],
+      command: null,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to trigger upgrade search";

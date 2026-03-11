@@ -8,6 +8,7 @@ import { hashPassword, isSupportedPasswordHash, verifyPassword } from "../auth/p
 import { createSessionToken, hashSessionToken } from "../auth/session";
 import { verifyInstanceConnection } from "../instances/connection";
 import type { InstanceType } from "../instances/definitions";
+import { DEFAULT_QUALITY_CHECK_STRATEGY } from "../quality-check-strategy";
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -362,7 +363,9 @@ export async function setupInitialAdmin(input: {
           baseUrl: normalizedInstance.baseUrl,
           apiKey: encrypt(normalizedInstance.apiKey),
           pollIntervalSeconds: 300,
+          qualityCheckIntervalSeconds: 1800,
           qualityCheckMaxItems: 50,
+          qualityCheckStrategy: DEFAULT_QUALITY_CHECK_STRATEGY,
           mediaSyncIntervalSeconds: 3600,
           requestSyncIntervalSeconds: normalizedInstance.type === "overseerr" ? 300 : null,
           autoFix: false,

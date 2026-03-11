@@ -45,7 +45,9 @@ const CREATE_SQL = `
     base_url TEXT NOT NULL,
     api_key TEXT NOT NULL,
     poll_interval_seconds INTEGER NOT NULL DEFAULT 300,
+    quality_check_interval_seconds INTEGER NOT NULL DEFAULT 1800,
     quality_check_max_items INTEGER NOT NULL DEFAULT 50,
+    quality_check_strategy TEXT NOT NULL DEFAULT 'oldest_search',
     enabled INTEGER NOT NULL DEFAULT 1,
     auto_fix INTEGER NOT NULL DEFAULT 0,
     last_health_check TEXT,
@@ -259,7 +261,9 @@ describe("Service Integration Tests", () => {
 
       expect(instance.name).toBe("Test Radarr");
       expect(instance.type).toBe("radarr");
+      expect(instance.qualityCheckIntervalSeconds).toBe(1800);
       expect(instance.qualityCheckMaxItems).toBe(50);
+      expect(instance.qualityCheckStrategy).toBe("oldest_search");
       expect(instance).not.toHaveProperty("apiKey");
 
       const all = listInstances();
@@ -298,7 +302,7 @@ describe("Service Integration Tests", () => {
       expect(fetched!.name).toBe("My Instance");
     });
 
-    it("updates quality check batch size", async () => {
+    it("updates quality check scheduler settings", async () => {
       const { createInstance, updateInstance, getInstance } = await import("../services/instance-service");
 
       const created = await createInstance({
@@ -308,10 +312,16 @@ describe("Service Integration Tests", () => {
         apiKey: "key",
       });
 
-      await updateInstance(created.id, { qualityCheckMaxItems: 25 });
+      await updateInstance(created.id, {
+        qualityCheckIntervalSeconds: 2700,
+        qualityCheckMaxItems: 25,
+        qualityCheckStrategy: "lowest_quality",
+      });
 
       const fetched = getInstance(created.id);
+      expect(fetched?.qualityCheckIntervalSeconds).toBe(2700);
       expect(fetched?.qualityCheckMaxItems).toBe(25);
+      expect(fetched?.qualityCheckStrategy).toBe("lowest_quality");
     });
 
     it("deletes instance", async () => {

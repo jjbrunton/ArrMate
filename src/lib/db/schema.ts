@@ -1,6 +1,7 @@
 import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { INSTANCE_TYPE_VALUES } from "../instances/definitions";
+import { DEFAULT_QUALITY_CHECK_STRATEGY, QUALITY_CHECK_STRATEGY_VALUES } from "../quality-check-strategy";
 
 export const instances = sqliteTable("instances", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -9,7 +10,11 @@ export const instances = sqliteTable("instances", {
   baseUrl: text("base_url").notNull(),
   apiKey: text("api_key").notNull(), // encrypted
   pollIntervalSeconds: integer("poll_interval_seconds").notNull().default(300),
+  qualityCheckIntervalSeconds: integer("quality_check_interval_seconds").notNull().default(1800),
   qualityCheckMaxItems: integer("quality_check_max_items").notNull().default(50),
+  qualityCheckStrategy: text("quality_check_strategy", { enum: QUALITY_CHECK_STRATEGY_VALUES })
+    .notNull()
+    .default(DEFAULT_QUALITY_CHECK_STRATEGY),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
   autoFix: integer("auto_fix", { mode: "boolean" }).notNull().default(false),
   lastHealthCheck: text("last_health_check"),

@@ -52,6 +52,11 @@ export async function syncMediaCache(instance: Instance) {
 async function syncRadarrCache(instance: Instance, client: ArrClient) {
   const movies = await client.getMovies();
 
+  if (movies.length === 0) {
+    log.warn({ instanceId: instance.id }, "Radarr returned empty movie list — skipping cache sync to preserve existing data");
+    return;
+  }
+
   syncMovieCache(instance.id, movies);
 
   writeAuditLog({
@@ -66,6 +71,11 @@ async function syncRadarrCache(instance: Instance, client: ArrClient) {
 
 async function syncSonarrCache(instance: Instance, client: ArrClient) {
   const seriesList = await client.getSeries();
+
+  if (seriesList.length === 0) {
+    log.warn({ instanceId: instance.id }, "Sonarr returned empty series list — skipping cache sync to preserve existing data");
+    return;
+  }
 
   // Fetch episodes for each series with concurrency control
   const episodesBySeriesId = new Map<number, Episode[]>();

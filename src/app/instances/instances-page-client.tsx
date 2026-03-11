@@ -9,6 +9,7 @@ import { InstanceCard } from "@/components/instances/instance-card";
 import { InstanceForm } from "@/components/instances/instance-form";
 import { PageHero } from "@/components/layout/page-hero";
 import type { InstanceType } from "@/lib/instances/definitions";
+import type { QualityCheckStrategy } from "@/lib/quality-check-strategy";
 
 interface InstanceData {
   id: number;
@@ -19,7 +20,9 @@ interface InstanceData {
     lastHealthStatus: string | null;
     lastHealthCheck: string | null;
     pollIntervalSeconds: number;
+    qualityCheckIntervalSeconds: number;
     qualityCheckMaxItems: number;
+    qualityCheckStrategy: QualityCheckStrategy;
     requestSyncIntervalSeconds: number | null;
     queueCount?: number;
     activeIssues?: number;

@@ -38,5 +38,5 @@ After detection, `enrichDetectedIssues()` runs two passes:
 | `remove_keep_files` | DELETE queue item, keep files | No |
 | `retry_download` | DELETE queue item (triggers re-search) | Yes |
 | `grab_release` | POST grab to re-download | Yes |
-| `force_import` | Returns message directing user to UI | No |
+| `force_import` | Fetches manual import files from output path, triggers import with the movie's ID | Yes (Radarr only) |
 | `select_movie_import` | Fetches manual import files, triggers import for specific movie | Yes |

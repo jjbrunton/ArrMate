@@ -30,10 +30,7 @@ export async function executeFix(
       return { success: true, message: "Release grabbed" };
 
     case "force_import":
-      return {
-        success: false,
-        message: "Force import requires manual action in the Sonarr/Radarr UI. Navigate to Activity → Queue and use the manual import option.",
-      };
+      return executeForceImport(client, externalQueueId, params);
 
     case "select_movie_import":
       return executeSelectMovieImport(client, externalQueueId, params);
@@ -41,6 +38,55 @@ export async function executeFix(
     default:
       return { success: false, message: `Unknown fix action: ${action}` };
   }
+}
+
+async function executeForceImport(
+  client: ArrClient,
+  externalQueueId: number,
+  params?: Record<string, unknown>,
+): Promise<FixResult> {
+  const allQueueItems = await client.getAllQueueItems();
+  const queueItem = allQueueItems.find((q) => q.id === externalQueueId);
+
+  if (!queueItem) {
+    return { success: false, message: "Queue item no longer exists." };
+  }
+
+  const movieId = queueItem.movie?.id;
+  if (!movieId) {
+    return {
+      success: false,
+      message: "Force import is currently only supported for Radarr movies. Use the Sonarr/Radarr UI for manual import.",
+    };
+  }
+
+  const outputPath = (params?.outputPath as string | undefined) || queueItem.outputPath;
+  if (!outputPath) {
+    return { success: false, message: "Cannot force import: no output path available." };
+  }
+
+  const importItems = await client.getManualImport(outputPath);
+  if (importItems.length === 0) {
+    return { success: false, message: "No importable files found. The files may have been moved or deleted." };
+  }
+
+  const fallbackQuality = queueItem.quality ?? { quality: { id: 0 }, revision: { version: 1, real: 0, isRepack: false } };
+  const fallbackLanguages = queueItem.languages ?? [{ id: 1, name: "English" }];
+
+  await client.triggerManualImport(
+    importItems.map((item) => ({
+      path: item.path,
+      movieId,
+      quality: item.quality ?? fallbackQuality,
+      languages: item.languages?.length ? item.languages : fallbackLanguages,
+      downloadId: queueItem.downloadId,
+    })),
+  );
+
+  return {
+    success: true,
+    message: `Force import triggered for "${queueItem.movie?.title || queueItem.title}" with ${importItems.length} file(s)`,
+  };
 }
 
 async function executeSelectMovieImport(

@@ -15,7 +15,9 @@ Shared instance connection records for Sonarr, Radarr, and Overseerr.
 | base_url | TEXT | Server URL |
 | api_key | TEXT | Encrypted (AES-256-GCM) |
 | poll_interval_seconds | INTEGER | Arr queue-poll interval, default 300 |
-| quality_check_max_items | INTEGER | Arr-only: max overdue cutoff items to search per 5-minute quality-check run. Default 50 |
+| quality_check_interval_seconds | INTEGER | Arr-only quality-check scheduler interval, default 1800 (30 minutes) |
+| quality_check_max_items | INTEGER | Arr-only: max overdue cutoff items to search per quality-check run. Default 50 |
+| quality_check_strategy | TEXT | Arr-only batch ordering for overdue media-management runs. Default `oldest_search` |
 | enabled | BOOLEAN | Default true |
 | auto_fix | BOOLEAN | Arr-only auto-fix toggle, default false |
 | last_health_check | TEXT | ISO timestamp |
@@ -163,6 +165,7 @@ Local cache of Radarr/Sonarr media libraries, synced periodically via `media_syn
 - The Media Management tab reads local DB state only. Scheduler/manual quality checks refresh the cached snapshot; the page itself does not call Arr.
 - The Media Management tab per-item `last check` and `next check` values come from persisted `quality_last_search_at`.
 - Manual and scheduled upgrade searches both consult persisted `quality_last_search_at`, so locally recorded searches still enforce the 24-hour cooldown even before Arr updates `lastSearchTime`.
+- Scheduled quality checks also consult the per-instance `quality_check_strategy` when choosing which overdue records to search first.
 - The Media Management tab per-item `upgrades sent` values come from `quality_search_items`; batch totals still come from `audit_log` `quality_search_sent` rows.
-- `last_quality_check_at` is instance-level scheduler metadata for the 5-minute quality-check cron, not a per-item timestamp.
+- `last_quality_check_at` is instance-level scheduler metadata for the configurable quality-check cron, not a per-item timestamp.
 - Overseerr request pages read local DB state only. Scheduler/manual request sync refreshes `imported_requests`; the dashboard does not call Overseerr directly.

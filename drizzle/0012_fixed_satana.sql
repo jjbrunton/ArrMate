@@ -1,0 +1,1 @@
+ALTER TABLE `instances` ADD `quality_check_strategy` text DEFAULT 'oldest_search' NOT NULL;

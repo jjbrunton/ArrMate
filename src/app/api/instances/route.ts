@@ -10,6 +10,7 @@ import { scheduleNewInstance } from "@/lib/scheduler";
 import { getRunningJobs } from "@/lib/scheduler/job-tracker";
 import { success, error } from "@/lib/utils/api-response";
 import { INSTANCE_TYPE_VALUES, getInstanceDefinition } from "@/lib/instances/definitions";
+import { QUALITY_CHECK_STRATEGY_VALUES } from "@/lib/quality-check-strategy";
 
 const createSchema = z.object({
   name: z.string().min(1).max(100),
@@ -17,7 +18,9 @@ const createSchema = z.object({
   baseUrl: z.url(),
   apiKey: z.string().min(1),
   pollIntervalSeconds: z.number().int().min(60).max(86400).optional(),
+  qualityCheckIntervalSeconds: z.number().int().min(300).max(86400).optional(),
   qualityCheckMaxItems: z.number().int().min(1).max(500).optional(),
+  qualityCheckStrategy: z.enum(QUALITY_CHECK_STRATEGY_VALUES).optional(),
   mediaSyncIntervalSeconds: z.number().int().min(300).max(86400).optional(),
   requestSyncIntervalSeconds: z.number().int().min(60).max(86400).optional(),
   autoFix: z.boolean().optional(),

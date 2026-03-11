@@ -81,7 +81,12 @@ function stopInstanceTasks(task: ScheduledInstanceTask) {
 function scheduleTasksForInstance(instance: Instance): ScheduledInstanceTask {
   const definition = getInstanceDefinition(instance.type);
   log.info(
-    { instanceId: instance.id, name: instance.name, interval: instance.pollIntervalSeconds },
+    {
+      instanceId: instance.id,
+      name: instance.name,
+      pollInterval: instance.pollIntervalSeconds,
+      qualityCheckInterval: instance.qualityCheckIntervalSeconds,
+    },
     "Scheduling tasks",
   );
 
@@ -100,7 +105,8 @@ function scheduleTasksForInstance(instance: Instance): ScheduledInstanceTask {
       void runPollTask(instance);
     });
 
-    qualityTask = cron.schedule("*/5 * * * *", () => {
+    const qualityCron = intervalToCron(instance.qualityCheckIntervalSeconds);
+    qualityTask = cron.schedule(qualityCron, () => {
       void runQualityTask(instance);
     });
 

@@ -17,6 +17,7 @@ import { RequestTable } from "@/components/requests/request-table";
 import { useToast } from "@/components/ui/toast";
 import { PageHero } from "@/components/layout/page-hero";
 import { getInstanceDefinition, type InstanceType } from "@/lib/instances/definitions";
+import type { QualityCheckStrategy } from "@/lib/quality-check-strategy";
 
 interface InstanceDetail {
   id: number;
@@ -30,7 +31,9 @@ interface InstanceDetail {
   lastPolledAt: string | null;
   lastQualityCheckAt: string | null;
   pollIntervalSeconds: number;
+  qualityCheckIntervalSeconds: number;
   qualityCheckMaxItems: number;
+  qualityCheckStrategy: QualityCheckStrategy;
   mediaSyncIntervalSeconds: number;
   lastMediaSyncAt: string | null;
   requestSyncIntervalSeconds: number | null;
@@ -378,7 +381,7 @@ export default function InstanceDetailPage({ params }: { params: Promise<{ id: s
                   key: "quality-check",
                   name: "Quality Checks",
                   icon: <RefreshCw className="h-4 w-4 text-amber-300" />,
-                  intervalSeconds: 300,
+                  intervalSeconds: instance.qualityCheckIntervalSeconds,
                   lastRunAt: instance.lastQualityCheckAt,
                   enabled: instance.enabled,
                   onRunNow: () => qualityCheckMutation.mutate(),

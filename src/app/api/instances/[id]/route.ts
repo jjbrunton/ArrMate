@@ -4,13 +4,16 @@ import { withApiAuth } from "@/lib/auth/request";
 import { getInstance, updateInstance, deleteInstance, getInstanceStats } from "@/lib/services/instance-service";
 import { getImportedRequestStats } from "@/lib/services/request-service";
 import { success, error } from "@/lib/utils/api-response";
+import { QUALITY_CHECK_STRATEGY_VALUES } from "@/lib/quality-check-strategy";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   baseUrl: z.url().optional(),
   apiKey: z.string().min(1).optional(),
   pollIntervalSeconds: z.number().int().min(60).max(86400).optional(),
+  qualityCheckIntervalSeconds: z.number().int().min(300).max(86400).optional(),
   qualityCheckMaxItems: z.number().int().min(1).max(500).optional(),
+  qualityCheckStrategy: z.enum(QUALITY_CHECK_STRATEGY_VALUES).optional(),
   mediaSyncIntervalSeconds: z.number().int().min(300).max(86400).optional(),
   requestSyncIntervalSeconds: z.number().int().min(60).max(86400).nullable().optional(),
   enabled: z.boolean().optional(),

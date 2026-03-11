@@ -14,6 +14,7 @@ const mockWriteAuditLog = vi.fn();
 const mockRecordQualitySearch = vi.fn();
 const mockSyncQualitySnapshot = vi.fn();
 const mockGetDueQualitySearchRecords = vi.fn();
+const mockRunExclusive = vi.fn();
 const mockLoggerInfo = vi.fn();
 const mockLoggerError = vi.fn();
 
@@ -33,6 +34,10 @@ vi.mock("../../services/quality-service", () => ({
   recordQualitySearch: (...args: unknown[]) => mockRecordQualitySearch(...args),
   syncQualitySnapshot: (...args: unknown[]) => mockSyncQualitySnapshot(...args),
   getDueQualitySearchRecords: (...args: unknown[]) => mockGetDueQualitySearchRecords(...args),
+}));
+
+vi.mock("../job-tracker", () => ({
+  runExclusive: (...args: unknown[]) => mockRunExclusive(...args),
 }));
 
 vi.mock("../../arr-client/client", () => ({
@@ -58,7 +63,9 @@ const CREATE_SQL = `
     base_url TEXT NOT NULL,
     api_key TEXT NOT NULL,
     poll_interval_seconds INTEGER NOT NULL DEFAULT 300,
+    quality_check_interval_seconds INTEGER NOT NULL DEFAULT 1800,
     quality_check_max_items INTEGER NOT NULL DEFAULT 50,
+    quality_check_strategy TEXT NOT NULL DEFAULT 'oldest_search',
     enabled INTEGER NOT NULL DEFAULT 1,
     auto_fix INTEGER NOT NULL DEFAULT 0,
     last_health_check TEXT,
@@ -90,8 +97,13 @@ describe("runQualityChecks", () => {
     mockRecordQualitySearch.mockReset();
     mockSyncQualitySnapshot.mockReset();
     mockGetDueQualitySearchRecords.mockReset();
+    mockRunExclusive.mockReset();
     mockLoggerInfo.mockReset();
     mockLoggerError.mockReset();
+    mockRunExclusive.mockImplementation(async (_instanceId: number, _jobType: string, fn: () => Promise<void>) => {
+      await fn();
+      return true;
+    });
     vi.useRealTimers();
   });
 
@@ -134,6 +146,12 @@ describe("runQualityChecks", () => {
       expect.arrayContaining([{ id: 1, lastSearchTime: null }]),
       2,
       new Date("2026-03-08T12:00:00.000Z"),
+      "oldest_search",
+    );
+    expect(mockRunExclusive).toHaveBeenCalledWith(
+      instance.id,
+      "quality-search",
+      expect.any(Function),
     );
     expect(mockSearchForUpgrade).toHaveBeenCalledWith([1, 2]);
     expect(mockLoggerInfo).toHaveBeenCalledWith(
@@ -165,6 +183,7 @@ describe("runQualityChecks", () => {
         belowCutoffCount: 4,
         dueCount: 2,
         maxPerRun: 2,
+        strategy: "oldest_search",
       }),
     }));
   });
@@ -197,6 +216,7 @@ describe("runQualityChecks", () => {
       [{ id: 10, lastSearchTime: "2026-03-08T10:30:00.000Z" }],
       5,
       new Date("2026-03-08T12:00:00.000Z"),
+      "oldest_search",
     );
     expect(mockSearchForUpgrade).not.toHaveBeenCalled();
     const refreshed = testDb
@@ -205,5 +225,45 @@ describe("runQualityChecks", () => {
       .where(eq(schema.instances.id, instance.id))
       .get();
     expect(refreshed?.lastQualityCheckAt).toBe("2026-03-08T12:00:00.000Z");
+  });
+
+  it("skips sending upgrade searches when another quality search is already running", async () => {
+    const instance = testDb.insert(schema.instances).values({
+      name: "Radarr",
+      type: "radarr",
+      baseUrl: "http://localhost:7878",
+      apiKey: "secret",
+      qualityCheckMaxItems: 2,
+    }).returning().get()!;
+
+    mockGetAllCutoffUnmetItems.mockResolvedValue([
+      { id: 1, lastSearchTime: null },
+    ]);
+    mockGetQualityProfiles.mockResolvedValue([]);
+    mockGetDueQualitySearchRecords.mockReturnValue([
+      { id: 1, lastSearchTime: null },
+    ]);
+    mockRunExclusive.mockResolvedValue(false);
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-08T12:00:00.000Z"));
+
+    const { runQualityChecks } = await import("./quality-check");
+    await runQualityChecks(instance);
+
+    expect(mockRunExclusive).toHaveBeenCalledWith(
+      instance.id,
+      "quality-search",
+      expect.any(Function),
+    );
+    expect(mockSearchForUpgrade).not.toHaveBeenCalled();
+    expect(mockRecordQualitySearch).not.toHaveBeenCalled();
+    expect(mockLoggerInfo).toHaveBeenCalledWith(
+      {
+        instanceId: instance.id,
+        dueCount: 1,
+      },
+      "Skipping upgrade search requests because another quality search is already running",
+    );
   });
 });

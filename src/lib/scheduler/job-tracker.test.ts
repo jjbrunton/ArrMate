@@ -11,7 +11,7 @@ import {
 describe("job-tracker", () => {
   beforeEach(() => {
     // Clear any running jobs between tests
-    for (const type of ["poll", "sync-media", "health-check", "quality-check", "sync-requests"] as const) {
+    for (const type of ["poll", "sync-media", "health-check", "quality-check", "quality-search", "sync-requests"] as const) {
       for (let id = 1; id <= 10; id++) {
         markJobDone(id, type);
       }
@@ -68,11 +68,11 @@ describe("job-tracker", () => {
 
     it("returns all running job types for instance", () => {
       markJobRunning(1, "poll");
-      markJobRunning(1, "quality-check");
+      markJobRunning(1, "quality-search");
       const running = getRunningJobs(1);
       expect(running).toHaveLength(2);
       expect(running).toContain("poll");
-      expect(running).toContain("quality-check");
+      expect(running).toContain("quality-search");
     });
 
     it("excludes jobs from other instances", () => {

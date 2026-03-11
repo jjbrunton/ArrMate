@@ -33,11 +33,68 @@ describe("executeFix", () => {
     expect(client.grabQueueItem).toHaveBeenCalledWith(42);
   });
 
-  it("force_import: returns message about manual action", async () => {
+  it("force_import: fails when queue item not found", async () => {
     const client = createMockArrClient();
+    client.getAllQueueItems.mockResolvedValue([]);
     const result = await executeFix(client as unknown as ArrClient, 42, "force_import");
     expect(result.success).toBe(false);
-    expect(result.message).toContain("manual action");
+    expect(result.message).toContain("no longer exists");
+  });
+
+  it("force_import: fails for non-movie queue items", async () => {
+    const client = createMockArrClient();
+    client.getAllQueueItems.mockResolvedValue([
+      { id: 42, outputPath: "/downloads/show", series: { id: 1, title: "Test Show" } },
+    ]);
+    const result = await executeFix(client as unknown as ArrClient, 42, "force_import");
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("only supported for Radarr");
+  });
+
+  it("force_import: fails when no output path", async () => {
+    const client = createMockArrClient();
+    client.getAllQueueItems.mockResolvedValue([
+      { id: 42, movie: { id: 10, title: "Test Movie" } },
+    ]);
+    const result = await executeFix(client as unknown as ArrClient, 42, "force_import");
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("no output path");
+  });
+
+  it("force_import: fails when no importable files", async () => {
+    const client = createMockArrClient();
+    client.getAllQueueItems.mockResolvedValue([
+      { id: 42, outputPath: "/downloads/movie", movie: { id: 10, title: "Test Movie" } },
+    ]);
+    client.getManualImport.mockResolvedValue([]);
+    const result = await executeFix(client as unknown as ArrClient, 42, "force_import");
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("No importable files");
+  });
+
+  it("force_import: triggers import with correct params", async () => {
+    const client = createMockArrClient();
+    client.getAllQueueItems.mockResolvedValue([
+      {
+        id: 42,
+        title: "Firestarter",
+        outputPath: "/downloads/Firestarter.2022",
+        movie: { id: 10, title: "Firestarter" },
+        quality: { quality: { id: 4 } },
+        languages: [{ id: 1 }],
+        downloadId: "dl-abc",
+      },
+    ]);
+    client.getManualImport.mockResolvedValue([
+      { path: "/downloads/Firestarter.2022/Firestarter.mkv", quality: { quality: { id: 4 } }, languages: [{ id: 1 }] },
+    ]);
+    const result = await executeFix(client as unknown as ArrClient, 42, "force_import");
+    expect(result.success).toBe(true);
+    expect(result.message).toContain("Firestarter");
+    expect(client.getManualImport).toHaveBeenCalledWith("/downloads/Firestarter.2022");
+    expect(client.triggerManualImport).toHaveBeenCalledWith([
+      expect.objectContaining({ movieId: 10, path: "/downloads/Firestarter.2022/Firestarter.mkv", downloadId: "dl-abc" }),
+    ]);
   });
 
   it("select_movie_import: fails without movieId", async () => {

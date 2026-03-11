@@ -9,6 +9,7 @@ import {
   recordQualitySearch,
   syncQualitySnapshot,
 } from "../../services/quality-service";
+import { runExclusive } from "../job-tracker";
 import { formatQualitySearchRecordLabel } from "../../services/cutoff-service";
 import { createLogger } from "../../utils/logger";
 
@@ -42,24 +43,48 @@ export async function runQualityChecks(instance: Instance) {
       records,
       instance.qualityCheckMaxItems,
       now,
+      instance.qualityCheckStrategy,
     );
 
     if (dueRecords.length > 0) {
-      const itemIds = dueRecords.map((record) => record.id);
-      const requestedItems = dueRecords.map((record) => ({
-        id: record.id,
-        label: formatQualitySearchRecordLabel(instance.type as "sonarr" | "radarr", record),
-      }));
-      log.info(
-        {
-          instanceId: instance.id,
-          requestedCount: requestedItems.length,
-          requestedItems,
-        },
-        "Sending upgrade search requests",
-      );
-      const command = await client.searchForUpgrade(itemIds);
-      recordQualitySearch(instance.id, itemIds, "automation", command);
+      const sent = await runExclusive(instance.id, "quality-search", async () => {
+        const lockedDueRecords = getDueQualitySearchRecords(
+          instance.id,
+          instance.type as "sonarr" | "radarr",
+          records,
+          instance.qualityCheckMaxItems,
+          now,
+          instance.qualityCheckStrategy,
+        );
+
+        if (lockedDueRecords.length === 0) return;
+
+        const itemIds = lockedDueRecords.map((record) => record.id);
+        const requestedItems = lockedDueRecords.map((record) => ({
+          id: record.id,
+          label: formatQualitySearchRecordLabel(instance.type as "sonarr" | "radarr", record),
+        }));
+        log.info(
+          {
+            instanceId: instance.id,
+            requestedCount: requestedItems.length,
+            requestedItems,
+          },
+          "Sending upgrade search requests",
+        );
+        const command = await client.searchForUpgrade(itemIds);
+        recordQualitySearch(instance.id, itemIds, "automation", command);
+      });
+
+      if (!sent) {
+        log.info(
+          {
+            instanceId: instance.id,
+            dueCount: dueRecords.length,
+          },
+          "Skipping upgrade search requests because another quality search is already running",
+        );
+      }
     }
 
     db.update(instancesTable)
@@ -75,6 +100,7 @@ export async function runQualityChecks(instance: Instance) {
         belowCutoffCount: records.length,
         dueCount: dueRecords.length,
         maxPerRun: instance.qualityCheckMaxItems,
+        strategy: instance.qualityCheckStrategy,
       },
     });
 
@@ -84,6 +110,7 @@ export async function runQualityChecks(instance: Instance) {
         belowCutoffCount: records.length,
         dueCount: dueRecords.length,
         maxPerRun: instance.qualityCheckMaxItems,
+        strategy: instance.qualityCheckStrategy,
       },
       "Quality checks complete",
     );

@@ -78,6 +78,20 @@
       "when": 1773002761999,
       "tag": "0010_little_puppet_master",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1773259651353,
+      "tag": "0011_thin_the_call",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1773260126941,
+      "tag": "0012_fixed_satana",
+      "breakpoints": true
     }
   ]
 }

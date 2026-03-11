@@ -2,6 +2,7 @@ import type { QueueItem, Instance } from "../db/schema";
 import type { QueueRecord } from "../arr-client/types";
 import type { IssueContext } from "../issues/types";
 import type { InstanceType } from "../instances/definitions";
+import { DEFAULT_QUALITY_CHECK_STRATEGY } from "../quality-check-strategy";
 
 let nextId = 1;
 function id() { return nextId++; }
@@ -77,7 +78,9 @@ export function makeInstance(overrides: Partial<Instance> = {}): Instance {
     baseUrl: "http://localhost:7878",
     apiKey: "encrypted-key",
     pollIntervalSeconds: 300,
+    qualityCheckIntervalSeconds: 1800,
     qualityCheckMaxItems: 50,
+    qualityCheckStrategy: DEFAULT_QUALITY_CHECK_STRATEGY,
     enabled: true,
     autoFix: false,
     lastHealthCheck: null,

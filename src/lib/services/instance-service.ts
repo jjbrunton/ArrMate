@@ -4,6 +4,10 @@ import { auditLog, instances, queueItems, detectedIssues, type Instance, type Ne
 import { encrypt, decrypt } from "../crypto";
 import { verifyInstanceConnection } from "../instances/connection";
 import type { InstanceType } from "../instances/definitions";
+import {
+  DEFAULT_QUALITY_CHECK_STRATEGY,
+  type QualityCheckStrategy,
+} from "../quality-check-strategy";
 
 export type InstancePublic = Omit<Instance, "apiKey">;
 
@@ -35,7 +39,9 @@ export async function createInstance(data: {
   baseUrl: string;
   apiKey: string;
   pollIntervalSeconds?: number;
+  qualityCheckIntervalSeconds?: number;
   qualityCheckMaxItems?: number;
+  qualityCheckStrategy?: QualityCheckStrategy;
   mediaSyncIntervalSeconds?: number;
   requestSyncIntervalSeconds?: number;
   autoFix?: boolean;
@@ -54,7 +60,9 @@ export async function createInstance(data: {
       baseUrl: data.baseUrl,
       apiKey: encrypted,
       pollIntervalSeconds: data.pollIntervalSeconds || 300,
+      qualityCheckIntervalSeconds: data.qualityCheckIntervalSeconds || 1800,
       qualityCheckMaxItems: data.qualityCheckMaxItems || 50,
+      qualityCheckStrategy: data.qualityCheckStrategy ?? DEFAULT_QUALITY_CHECK_STRATEGY,
       mediaSyncIntervalSeconds: data.mediaSyncIntervalSeconds || 3600,
       requestSyncIntervalSeconds: data.type === "overseerr"
         ? (data.requestSyncIntervalSeconds || 300)
@@ -74,7 +82,9 @@ export async function updateInstance(
     baseUrl?: string;
     apiKey?: string;
     pollIntervalSeconds?: number;
+    qualityCheckIntervalSeconds?: number;
     qualityCheckMaxItems?: number;
+    qualityCheckStrategy?: QualityCheckStrategy;
     mediaSyncIntervalSeconds?: number;
     requestSyncIntervalSeconds?: number | null;
     enabled?: boolean;
@@ -99,7 +109,11 @@ export async function updateInstance(
   if (data.baseUrl !== undefined) updates.baseUrl = data.baseUrl;
   if (data.apiKey !== undefined) updates.apiKey = encrypt(data.apiKey);
   if (data.pollIntervalSeconds !== undefined) updates.pollIntervalSeconds = data.pollIntervalSeconds;
+  if (data.qualityCheckIntervalSeconds !== undefined) {
+    updates.qualityCheckIntervalSeconds = data.qualityCheckIntervalSeconds;
+  }
   if (data.qualityCheckMaxItems !== undefined) updates.qualityCheckMaxItems = data.qualityCheckMaxItems;
+  if (data.qualityCheckStrategy !== undefined) updates.qualityCheckStrategy = data.qualityCheckStrategy;
   if (data.mediaSyncIntervalSeconds !== undefined) updates.mediaSyncIntervalSeconds = data.mediaSyncIntervalSeconds;
   if (data.requestSyncIntervalSeconds !== undefined) updates.requestSyncIntervalSeconds = data.requestSyncIntervalSeconds;
   if (data.enabled !== undefined) updates.enabled = data.enabled;

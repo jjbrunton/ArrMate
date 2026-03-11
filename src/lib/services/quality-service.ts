@@ -8,6 +8,11 @@ import {
   cachedSeries,
   qualitySearchItems,
 } from "../db/schema";
+import {
+  DEFAULT_QUALITY_CHECK_STRATEGY,
+  orderQualityCheckRecords,
+  type QualityCheckStrategy,
+} from "../quality-check-strategy";
 import { buildProfileCutoffMap, formatQualitySearchRecordLabel, getRecordQuality } from "./cutoff-service";
 
 type InstanceType = "sonarr" | "radarr";
@@ -203,6 +208,7 @@ export function getDueQualitySearchRecords(
   records: CutoffUnmetRecord[],
   maxItems: number,
   now = new Date(),
+  strategy: QualityCheckStrategy = DEFAULT_QUALITY_CHECK_STRATEGY,
 ): CutoffUnmetRecord[] {
   const storedLastSearchMap = getStoredQualityLastSearchMap(
     instanceId,
@@ -210,24 +216,16 @@ export function getDueQualitySearchRecords(
     records.map((record) => record.id),
   );
 
-  return records
+  const dueRecords = records
     .filter((record) => isQualitySearchDue(
       getLatestKnownQualitySearchAt(
         record.lastSearchTime ?? null,
         storedLastSearchMap.get(record.id) ?? null,
       ),
       now,
-    ))
-    .sort((a, b) => {
-      const lastSearchA = getTimestamp(
-        getLatestKnownQualitySearchAt(a.lastSearchTime ?? null, storedLastSearchMap.get(a.id) ?? null),
-      );
-      const lastSearchB = getTimestamp(
-        getLatestKnownQualitySearchAt(b.lastSearchTime ?? null, storedLastSearchMap.get(b.id) ?? null),
-      );
-      return lastSearchA - lastSearchB;
-    })
-    .slice(0, maxItems);
+    ));
+
+  return orderQualityCheckRecords(dueRecords, strategy, { lastSearchAtById: storedLastSearchMap }).slice(0, maxItems);
 }
 
 export interface QualitySearchLogItem {
