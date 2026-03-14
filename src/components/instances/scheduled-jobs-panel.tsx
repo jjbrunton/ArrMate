@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Timer, RefreshCw, Play } from "lucide-react";
+import { RefreshCw, Play } from "lucide-react";
+import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
 
 interface CronJob {
   key: string;
@@ -61,8 +62,8 @@ function Countdown({ lastRunAt, intervalSeconds, enabled }: {
       : null;
 
   if (!enabled) return <span className="text-slate-500">Paused</span>;
-  if (secondsLeft === null) return <span className="text-slate-500">Awaiting first run</span>;
-  if (secondsLeft === 0) return <span className="text-cyan-300">Running...</span>;
+  if (secondsLeft === null) return <span className="text-slate-500">Waiting</span>;
+  if (secondsLeft === 0) return <span className="text-cyan-300">Now</span>;
 
   const minutes = Math.floor(secondsLeft / 60);
   const secs = secondsLeft % 60;
@@ -70,7 +71,7 @@ function Countdown({ lastRunAt, intervalSeconds, enabled }: {
     ? `${minutes}m ${String(secs).padStart(2, "0")}s`
     : `${secs}s`;
 
-  return <span className="text-slate-300">{display}</span>;
+  return <span>{display}</span>;
 }
 
 interface ScheduledJobsPanelProps {
@@ -79,68 +80,53 @@ interface ScheduledJobsPanelProps {
 
 export function ScheduledJobsPanel({ jobs }: ScheduledJobsPanelProps) {
   return (
-    <section className="app-panel p-5 sm:p-6">
-      <div className="mb-4 flex items-center gap-2">
-        <Timer className="h-4 w-4 text-slate-400" />
-        <h3 className="text-sm font-medium text-slate-300">Scheduled Jobs</h3>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-4">
+    <TooltipProvider>
+      <div className="flex flex-wrap gap-2">
         {jobs.map((job) => (
-          <div
+          <Tooltip
             key={job.key}
-            className="app-panel-muted flex flex-col gap-2 rounded-lg p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {job.icon}
-                <span className="text-sm font-medium text-slate-200">{job.name}</span>
+            content={
+              <div className="space-y-1">
+                <p className="font-medium text-slate-200">{job.name}</p>
+                <p>Interval: {formatInterval(job.intervalSeconds)}</p>
+                <p>Last run: {job.lastRunAt ? formatTimeAgo(job.lastRunAt) : "Never"}</p>
               </div>
+            }
+          >
+            <div className="app-panel-muted flex items-center gap-2 rounded-full px-3 py-1.5 text-xs">
+              {job.icon}
+              <span className="font-medium text-slate-300">{job.name}</span>
+              <span className="text-slate-500">·</span>
+              <span className="tabular-nums text-slate-400">
+                <Countdown
+                  lastRunAt={job.lastRunAt}
+                  intervalSeconds={job.intervalSeconds}
+                  enabled={job.enabled}
+                />
+              </span>
               {job.onRunNow ? (
                 <button
-                  onClick={job.onRunNow}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    job.onRunNow?.();
+                  }}
                   disabled={job.isRunDisabled}
-                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200 disabled:opacity-50"
-                  title={job.isRunDisabled && !job.isRunning ? "This job is already running" : "Run now"}
+                  className="ml-0.5 rounded-full p-0.5 text-slate-500 transition-colors hover:bg-white/8 hover:text-slate-200 disabled:opacity-50"
+                  aria-label={`Run ${job.name}`}
                 >
                   {job.isRunning ? (
                     <RefreshCw className="h-3 w-3 animate-spin" />
                   ) : (
                     <Play className="h-3 w-3" />
                   )}
-                  {job.isRunning ? "Running" : "Run"}
                 </button>
               ) : job.isRunning ? (
-                <span className="flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400">
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                  Running
-                </span>
+                <RefreshCw className="ml-0.5 h-3 w-3 animate-spin text-slate-500" />
               ) : null}
             </div>
-
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Interval</span>
-                <span className="text-slate-300">{formatInterval(job.intervalSeconds)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Last run</span>
-                <span className="text-slate-400">
-                  {job.lastRunAt ? formatTimeAgo(job.lastRunAt) : "Never"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Next in</span>
-                <Countdown
-                  lastRunAt={job.lastRunAt}
-                  intervalSeconds={job.intervalSeconds}
-                  enabled={job.enabled}
-                />
-              </div>
-            </div>
-          </div>
+          </Tooltip>
         ))}
       </div>
-    </section>
+    </TooltipProvider>
   );
 }

@@ -515,11 +515,267 @@ describe("quality-service", () => {
     )).toEqual({
       searchableIds: [],
       skippedIds: [11],
+      cutoffMetIds: [],
     });
 
     expect(getQualitySearchLogItems(instance.id, "radarr", [11, 999])).toEqual([
       { id: 11, label: "Wrong Quality" },
       { id: 999, label: "Unknown movie (999)" },
+    ]);
+  });
+
+  it("excludes movies that have met their quality cutoff from searchable ids", async () => {
+    const { partitionQualitySearchableItemIds } = await import("./quality-service");
+
+    const instance = testDb.insert(schema.instances).values({
+      name: "Radarr",
+      type: "radarr",
+      baseUrl: "http://localhost:7878",
+      apiKey: "secret",
+    }).returning().get()!;
+
+    testDb.insert(schema.cachedMovies).values([
+      {
+        instanceId: instance.id,
+        externalId: 10,
+        title: "Met Cutoff",
+        monitored: true,
+        hasFile: true,
+        belowCutoff: false,
+      },
+      {
+        instanceId: instance.id,
+        externalId: 11,
+        title: "Below Cutoff",
+        monitored: true,
+        hasFile: true,
+        belowCutoff: true,
+      },
+    ]).run();
+
+    const result = partitionQualitySearchableItemIds(
+      instance.id,
+      "radarr",
+      [10, 11],
+      new Date("2026-03-08T12:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      searchableIds: [11],
+      skippedIds: [],
+      cutoffMetIds: [10],
+    });
+  });
+
+  it("excludes episodes that have met their quality cutoff from searchable ids", async () => {
+    const { partitionQualitySearchableItemIds } = await import("./quality-service");
+
+    const instance = testDb.insert(schema.instances).values({
+      name: "Sonarr",
+      type: "sonarr",
+      baseUrl: "http://localhost:8989",
+      apiKey: "secret",
+    }).returning().get()!;
+
+    const series = testDb.insert(schema.cachedSeries).values({
+      instanceId: instance.id,
+      externalId: 100,
+      title: "Test Series",
+      monitored: true,
+      qualityProfileId: 1,
+    }).returning().get()!;
+
+    testDb.insert(schema.cachedEpisodes).values([
+      {
+        instanceId: instance.id,
+        seriesCacheId: series.id,
+        seriesExternalId: 100,
+        externalId: 201,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        title: "Met Cutoff",
+        monitored: true,
+        hasFile: true,
+        belowCutoff: false,
+      },
+      {
+        instanceId: instance.id,
+        seriesCacheId: series.id,
+        seriesExternalId: 100,
+        externalId: 202,
+        seasonNumber: 1,
+        episodeNumber: 2,
+        title: "Below Cutoff",
+        monitored: true,
+        hasFile: true,
+        belowCutoff: true,
+      },
+    ]).run();
+
+    const result = partitionQualitySearchableItemIds(
+      instance.id,
+      "sonarr",
+      [201, 202],
+      new Date("2026-03-08T12:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      searchableIds: [202],
+      skippedIds: [],
+      cutoffMetIds: [201],
+    });
+  });
+
+  it("excludes cutoff-met movies from due quality search records", async () => {
+    const { getDueQualitySearchRecords, syncQualitySnapshot } = await import("./quality-service");
+
+    const instance = testDb.insert(schema.instances).values({
+      name: "Radarr",
+      type: "radarr",
+      baseUrl: "http://localhost:7878",
+      apiKey: "secret",
+    }).returning().get()!;
+
+    testDb.insert(schema.cachedMovies).values([
+      {
+        instanceId: instance.id,
+        externalId: 10,
+        title: "Met Cutoff",
+        monitored: true,
+        hasFile: true,
+        belowCutoff: false,
+      },
+      {
+        instanceId: instance.id,
+        externalId: 11,
+        title: "Below Cutoff",
+        monitored: true,
+        hasFile: true,
+        belowCutoff: true,
+      },
+    ]).run();
+
+    const records = [
+      { id: 10, title: "Met Cutoff", qualityProfileId: 1, movieFile: { quality: webdl1080p } },
+      { id: 11, title: "Below Cutoff", qualityProfileId: 1, movieFile: { quality: webdl1080p } },
+    ];
+
+    const dueRecords = getDueQualitySearchRecords(
+      instance.id,
+      "radarr",
+      records,
+      50,
+      new Date("2026-03-08T12:00:00.000Z"),
+    );
+
+    expect(dueRecords).toEqual([
+      expect.objectContaining({ id: 11 }),
+    ]);
+  });
+
+  it("excludes unmonitored movies from searchable ids", async () => {
+    const { partitionQualitySearchableItemIds } = await import("./quality-service");
+
+    const instance = testDb.insert(schema.instances).values({
+      name: "Radarr",
+      type: "radarr",
+      baseUrl: "http://localhost:7878",
+      apiKey: "secret",
+    }).returning().get()!;
+
+    testDb.insert(schema.cachedMovies).values([
+      {
+        instanceId: instance.id,
+        externalId: 10,
+        title: "Unmonitored",
+        monitored: false,
+        hasFile: true,
+        belowCutoff: true,
+      },
+      {
+        instanceId: instance.id,
+        externalId: 11,
+        title: "Monitored",
+        monitored: true,
+        hasFile: true,
+        belowCutoff: true,
+      },
+    ]).run();
+
+    const result = partitionQualitySearchableItemIds(
+      instance.id,
+      "radarr",
+      [10, 11],
+      new Date("2026-03-08T12:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      searchableIds: [11],
+      skippedIds: [],
+      cutoffMetIds: [10],
+    });
+  });
+
+  it("excludes unmonitored episodes from due quality search records", async () => {
+    const { getDueQualitySearchRecords } = await import("./quality-service");
+
+    const instance = testDb.insert(schema.instances).values({
+      name: "Sonarr",
+      type: "sonarr",
+      baseUrl: "http://localhost:8989",
+      apiKey: "secret",
+    }).returning().get()!;
+
+    const series = testDb.insert(schema.cachedSeries).values({
+      instanceId: instance.id,
+      externalId: 100,
+      title: "Test Series",
+      monitored: true,
+      qualityProfileId: 1,
+    }).returning().get()!;
+
+    testDb.insert(schema.cachedEpisodes).values([
+      {
+        instanceId: instance.id,
+        seriesCacheId: series.id,
+        seriesExternalId: 100,
+        externalId: 201,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        title: "Unmonitored",
+        monitored: false,
+        hasFile: true,
+        belowCutoff: true,
+      },
+      {
+        instanceId: instance.id,
+        seriesCacheId: series.id,
+        seriesExternalId: 100,
+        externalId: 202,
+        seasonNumber: 1,
+        episodeNumber: 2,
+        title: "Monitored",
+        monitored: true,
+        hasFile: true,
+        belowCutoff: true,
+      },
+    ]).run();
+
+    const records = [
+      { id: 201, series: { id: 100, title: "Test Series" }, episode: { title: "Unmonitored", seasonNumber: 1, episodeNumber: 1 } },
+      { id: 202, series: { id: 100, title: "Test Series" }, episode: { title: "Monitored", seasonNumber: 1, episodeNumber: 2 } },
+    ];
+
+    const dueRecords = getDueQualitySearchRecords(
+      instance.id,
+      "sonarr",
+      records,
+      50,
+      new Date("2026-03-08T12:00:00.000Z"),
+    );
+
+    expect(dueRecords).toEqual([
+      expect.objectContaining({ id: 202 }),
     ]);
   });
 

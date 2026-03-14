@@ -137,11 +137,17 @@ export function isQualitySearchDue(lastSearchAt: string | null | undefined, now 
     || now.getTime() - lastSearchTimestamp >= QUALITY_CHECK_INTERVAL_MS;
 }
 
-function getStoredQualityLastSearchMap(
+interface StoredQualityInfo {
+  lastSearchAt: string | null;
+  belowCutoff: boolean;
+  monitored: boolean;
+}
+
+function getStoredQualityInfoMap(
   instanceId: number,
   instanceType: InstanceType,
   itemIds: number[],
-): Map<number, string | null> {
+): Map<number, StoredQualityInfo> {
   if (itemIds.length === 0) return new Map();
 
   const db = getDb();
@@ -151,6 +157,8 @@ function getStoredQualityLastSearchMap(
       .select({
         itemId: cachedMovies.externalId,
         lastSearchAt: cachedMovies.qualityLastSearchAt,
+        belowCutoff: cachedMovies.belowCutoff,
+        monitored: cachedMovies.monitored,
       })
       .from(cachedMovies)
       .where(and(
@@ -159,13 +167,19 @@ function getStoredQualityLastSearchMap(
       ))
       .all();
 
-    return new Map(rows.map((row) => [row.itemId, row.lastSearchAt ?? null]));
+    return new Map(rows.map((row) => [row.itemId, {
+      lastSearchAt: row.lastSearchAt ?? null,
+      belowCutoff: row.belowCutoff,
+      monitored: row.monitored,
+    }]));
   }
 
   const rows = db
     .select({
       itemId: cachedEpisodes.externalId,
       lastSearchAt: cachedEpisodes.qualityLastSearchAt,
+      belowCutoff: cachedEpisodes.belowCutoff,
+      monitored: cachedEpisodes.monitored,
     })
     .from(cachedEpisodes)
     .where(and(
@@ -174,7 +188,11 @@ function getStoredQualityLastSearchMap(
     ))
     .all();
 
-  return new Map(rows.map((row) => [row.itemId, row.lastSearchAt ?? null]));
+  return new Map(rows.map((row) => [row.itemId, {
+    lastSearchAt: row.lastSearchAt ?? null,
+    belowCutoff: row.belowCutoff,
+    monitored: row.monitored,
+  }]));
 }
 
 export function partitionQualitySearchableItemIds(
@@ -185,21 +203,27 @@ export function partitionQualitySearchableItemIds(
 ): {
   searchableIds: number[];
   skippedIds: number[];
+  cutoffMetIds: number[];
 } {
-  const storedLastSearchMap = getStoredQualityLastSearchMap(instanceId, instanceType, itemIds);
+  const storedInfoMap = getStoredQualityInfoMap(instanceId, instanceType, itemIds);
 
   return itemIds.reduce<{
     searchableIds: number[];
     skippedIds: number[];
+    cutoffMetIds: number[];
   }>((result, itemId) => {
-    if (isQualitySearchDue(storedLastSearchMap.get(itemId) ?? null, now)) {
+    const info = storedInfoMap.get(itemId);
+
+    if (info && (!info.belowCutoff || !info.monitored)) {
+      result.cutoffMetIds.push(itemId);
+    } else if (isQualitySearchDue(info?.lastSearchAt ?? null, now)) {
       result.searchableIds.push(itemId);
     } else {
       result.skippedIds.push(itemId);
     }
 
     return result;
-  }, { searchableIds: [], skippedIds: [] });
+  }, { searchableIds: [], skippedIds: [], cutoffMetIds: [] });
 }
 
 export function getDueQualitySearchRecords(
@@ -210,22 +234,31 @@ export function getDueQualitySearchRecords(
   now = new Date(),
   strategy: QualityCheckStrategy = DEFAULT_QUALITY_CHECK_STRATEGY,
 ): CutoffUnmetRecord[] {
-  const storedLastSearchMap = getStoredQualityLastSearchMap(
+  const storedInfoMap = getStoredQualityInfoMap(
     instanceId,
     instanceType,
     records.map((record) => record.id),
   );
 
-  const dueRecords = records
-    .filter((record) => isQualitySearchDue(
-      getLatestKnownQualitySearchAt(
-        record.lastSearchTime ?? null,
-        storedLastSearchMap.get(record.id) ?? null,
-      ),
-      now,
-    ));
+  const lastSearchAtById = new Map(
+    Array.from(storedInfoMap.entries()).map(([id, info]) => [id, info.lastSearchAt]),
+  );
 
-  return orderQualityCheckRecords(dueRecords, strategy, { lastSearchAtById: storedLastSearchMap }).slice(0, maxItems);
+  const dueRecords = records
+    .filter((record) => {
+      const info = storedInfoMap.get(record.id);
+      if (info && (!info.belowCutoff || !info.monitored)) return false;
+
+      return isQualitySearchDue(
+        getLatestKnownQualitySearchAt(
+          record.lastSearchTime ?? null,
+          info?.lastSearchAt ?? null,
+        ),
+        now,
+      );
+    });
+
+  return orderQualityCheckRecords(dueRecords, strategy, { lastSearchAtById }).slice(0, maxItems);
 }
 
 export interface QualitySearchLogItem {

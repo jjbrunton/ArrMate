@@ -51,12 +51,14 @@ export const POST = withApiAuth(async (
           sent: false;
           searchedIds: number[];
           skippedIds: number[];
+          cutoffMetIds: number[];
           command: null;
         }
       | {
           sent: true;
           searchedIds: number[];
           skippedIds: number[];
+          cutoffMetIds: number[];
           command: Awaited<ReturnType<ArrClient["searchForUpgrade"]>>;
         }
       | null = null;
@@ -64,7 +66,7 @@ export const POST = withApiAuth(async (
 
     const ran = await runExclusive(instance.id, "quality-search", async () => {
       const now = new Date();
-      const { searchableIds, skippedIds } = partitionQualitySearchableItemIds(
+      const { searchableIds, skippedIds, cutoffMetIds } = partitionQualitySearchableItemIds(
         instance.id,
         instanceType,
         parsed.data.ids,
@@ -76,6 +78,7 @@ export const POST = withApiAuth(async (
           sent: false,
           searchedIds: [],
           skippedIds,
+          cutoffMetIds,
           command: null,
         };
         return;
@@ -91,6 +94,7 @@ export const POST = withApiAuth(async (
             source: "user",
             activeSearchCommands,
             skippedIds,
+            cutoffMetIds,
           },
           "Skipping upgrade search requests because Arr is already processing search commands",
         );
@@ -98,6 +102,7 @@ export const POST = withApiAuth(async (
           sent: false,
           searchedIds: [],
           skippedIds,
+          cutoffMetIds,
           command: null,
         };
         return;
@@ -121,6 +126,7 @@ export const POST = withApiAuth(async (
         sent: true,
         searchedIds: searchableIds,
         skippedIds,
+        cutoffMetIds,
         command: result,
       };
     });
@@ -137,6 +143,7 @@ export const POST = withApiAuth(async (
       sent: false,
       searchedIds: [],
       skippedIds: [],
+      cutoffMetIds: [],
       command: null,
     });
   } catch (err: unknown) {
