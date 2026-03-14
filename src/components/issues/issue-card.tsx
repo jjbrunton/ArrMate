@@ -39,18 +39,24 @@ const severityConfig = {
     variant: "critical" as const,
     color: "text-rose-200",
     surface: "border-rose-300/15 bg-rose-400/10",
+    border: "border-l-rose-400",
+    tint: "bg-rose-500/[0.04]",
   },
   warning: {
     icon: AlertTriangle,
     variant: "warning" as const,
     color: "text-amber-200",
     surface: "border-amber-300/15 bg-amber-400/10",
+    border: "border-l-amber-400",
+    tint: "bg-amber-500/[0.04]",
   },
   info: {
     icon: Info,
     variant: "info" as const,
     color: "text-cyan-200",
     surface: "border-cyan-300/15 bg-cyan-400/10",
+    border: "border-l-cyan-400",
+    tint: "bg-transparent",
   },
 };
 
@@ -98,7 +104,7 @@ export function IssueCard({ issue }: IssueCardProps) {
   });
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className={`relative overflow-hidden border-l-2 ${config.border} ${config.tint}`}>
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
       <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">

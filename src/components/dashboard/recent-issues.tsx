@@ -1,11 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
 import { IssueCard, type IssueData } from "@/components/issues/issue-card";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
 export function RecentIssues() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["issues", "active"],
     queryFn: async () => {
       const res = await fetch("/api/issues");
@@ -20,6 +22,18 @@ export function RecentIssues() {
     return (
       <div className="flex items-center justify-center py-8">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="app-empty-state flex flex-col items-center gap-3 py-10 text-center">
+        <p className="text-sm font-medium text-slate-200">Failed to load issues</p>
+        <Button size="sm" variant="outline" onClick={() => void refetch()}>
+          <RefreshCw className="h-3.5 w-3.5" />
+          Retry
+        </Button>
       </div>
     );
   }

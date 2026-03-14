@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Bot, Film, Search, Tv, User } from "lucide-react";
+import { Bot, Film, RefreshCw, Search, Tv, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils/cn";
 
@@ -73,7 +74,7 @@ function formatTimestamp(value: string): string {
 }
 
 export function RecentMediaManagementRequests() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["logs", "media-management"],
     queryFn: async () => {
       const res = await fetch("/api/logs?limit=50&action=quality_search_sent");
@@ -88,6 +89,18 @@ export function RecentMediaManagementRequests() {
     return (
       <div className="flex items-center justify-center py-10">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="app-empty-state flex flex-col items-center gap-3 py-10 text-center">
+        <p className="text-sm font-medium text-slate-200">Failed to load requests</p>
+        <Button size="sm" variant="outline" onClick={() => void refetch()}>
+          <RefreshCw className="h-3.5 w-3.5" />
+          Retry
+        </Button>
       </div>
     );
   }

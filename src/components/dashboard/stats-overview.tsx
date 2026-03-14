@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Server, AlertTriangle, AlertCircle, CheckCircle } from "lucide-react";
+import { Server, AlertTriangle, AlertCircle, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
 
 interface Stats {
   totalInstances: number;
@@ -13,8 +13,28 @@ interface Stats {
   warningIssues: number;
 }
 
+function StatsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
+            <div className="h-10 w-10 animate-pulse rounded-xl bg-white/8 sm:h-12 sm:w-12 sm:rounded-2xl" />
+            <div className="space-y-2">
+              <div className="h-3 w-14 animate-pulse rounded bg-white/8" />
+              <div className="h-7 w-8 animate-pulse rounded bg-white/8" />
+              <div className="hidden h-3 w-16 animate-pulse rounded bg-white/8 sm:block" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export function StatsOverview() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       const res = await fetch("/api/health");
@@ -26,27 +46,33 @@ export function StatsOverview() {
   });
 
   if (isLoading) {
+    return <StatsSkeleton />;
+  }
+
+  if (isError) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Spinner />
+      <div className="app-empty-state flex flex-col items-center gap-3 py-10 text-center">
+        <p className="text-sm font-medium text-slate-200">Failed to load stats</p>
+        <Button size="sm" variant="outline" onClick={() => void refetch()}>
+          <RefreshCw className="h-3.5 w-3.5" />
+          Retry
+        </Button>
       </div>
     );
   }
 
-  const stats = data;
-
   const cards = [
     {
       label: "Instances",
-      value: stats?.totalInstances ?? 0,
-      sub: `${stats?.healthyInstances ?? 0} healthy`,
+      value: data?.totalInstances ?? 0,
+      sub: `${data?.healthyInstances ?? 0} healthy`,
       icon: Server,
       color: "text-cyan-200",
       surface: "bg-cyan-400/10 border-cyan-300/15",
     },
     {
       label: "Active Issues",
-      value: stats?.activeIssues ?? 0,
+      value: data?.activeIssues ?? 0,
       sub: "across all instances",
       icon: AlertTriangle,
       color: "text-amber-200",
@@ -54,35 +80,35 @@ export function StatsOverview() {
     },
     {
       label: "Critical",
-      value: stats?.criticalIssues ?? 0,
+      value: data?.criticalIssues ?? 0,
       sub: "need attention",
       icon: AlertCircle,
       color: "text-rose-200",
       surface: "bg-rose-400/10 border-rose-300/15",
     },
     {
-      label: "Healthy",
-      value: stats?.healthyInstances ?? 0,
-      sub: `of ${stats?.totalInstances ?? 0}`,
-      icon: CheckCircle,
-      color: "text-emerald-200",
-      surface: "bg-emerald-400/10 border-emerald-300/15",
+      label: "Warnings",
+      value: data?.warningIssues ?? 0,
+      sub: "monitoring",
+      icon: AlertTriangle,
+      color: "text-yellow-200",
+      surface: "bg-yellow-400/10 border-yellow-300/15",
     },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
       {cards.map((c) => (
         <Card key={c.label} className="relative overflow-hidden">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          <CardContent className="flex items-center gap-4 p-5 sm:p-6">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${c.surface} ${c.color}`}>
-              <c.icon className="h-5 w-5" />
+          <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl border sm:h-12 sm:w-12 sm:rounded-2xl ${c.surface} ${c.color}`}>
+              <c.icon className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div className="space-y-1">
+            <div className="min-w-0 space-y-0.5 sm:space-y-1">
               <p className="app-eyebrow">{c.label}</p>
-              <p className="text-3xl font-semibold text-white">{c.value}</p>
-              <p className="text-sm text-slate-400">
+              <p className="text-2xl font-semibold text-white sm:text-3xl">{c.value}</p>
+              <p className="hidden text-sm text-slate-400 sm:block">
                 {c.sub}
               </p>
             </div>

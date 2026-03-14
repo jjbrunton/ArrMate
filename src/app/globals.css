@@ -198,7 +198,13 @@ p {
   }
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling — Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(67, 210, 255, 0.18) transparent;
+}
+
+/* Scrollbar styling — Webkit */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -216,4 +222,16 @@ p {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(67, 210, 255, 0.32);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

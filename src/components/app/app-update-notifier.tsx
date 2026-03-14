@@ -125,6 +125,7 @@ function ChangelogDialog({
 
 export function AppUpdateNotifier({ variant = "compact" }: { variant?: "compact" | "full" }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["app-update"],
     queryFn: async () => {
@@ -243,12 +244,17 @@ export function AppUpdateNotifier({ variant = "compact" }: { variant?: "compact"
 
   return (
     <>
-      <div className="app-panel-muted mt-4 space-y-3 px-3 py-3">
-        <div className="flex items-center gap-3 px-1">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
+      <div className="app-panel-muted mt-4 px-3 py-3">
+        <button
+          type="button"
+          className="flex w-full items-center gap-3 px-1 text-left"
+          onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
             <Package className="h-4 w-4" />
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <p className="truncate text-sm font-medium text-white">ArrMate</p>
               <Badge variant={badgeVariant} className="px-2 py-0.5 text-[10px]">
@@ -256,48 +262,52 @@ export function AppUpdateNotifier({ variant = "compact" }: { variant?: "compact"
               </Badge>
             </div>
             <p className="truncate text-xs text-slate-400">
-              {isLoading ? "Checking releases" : getSummary(data)}
+              {isLoading ? "Checking releases" : `${formatVersion(data?.currentVersion ?? null)} — ${data?.updateAvailable ? "Update available" : data?.error ? "Check failed" : "Up to date"}`}
             </p>
           </div>
-        </div>
+        </button>
 
-        <div className="grid grid-cols-2 gap-2 px-1">
-          <div className="rounded-[0.95rem] border border-white/8 bg-white/4 px-3 py-2">
-            <p className="app-eyebrow">Installed</p>
-            <p className="mt-1 text-sm font-medium text-white">{formatVersion(data?.currentVersion ?? null)}</p>
-          </div>
-          <div className="rounded-[0.95rem] border border-white/8 bg-white/4 px-3 py-2">
-            <p className="app-eyebrow">Latest</p>
-            <p className="mt-1 text-sm font-medium text-white">
-              {formatVersion(data?.latestVersion ?? data?.currentVersion ?? null)}
-            </p>
-          </div>
-        </div>
+        {expanded && (
+          <div className="mt-3 space-y-3">
+            <div className="grid grid-cols-2 gap-2 px-1">
+              <div className="rounded-[0.95rem] border border-white/8 bg-white/4 px-3 py-2">
+                <p className="app-eyebrow">Installed</p>
+                <p className="mt-1 text-sm font-medium text-white">{formatVersion(data?.currentVersion ?? null)}</p>
+              </div>
+              <div className="rounded-[0.95rem] border border-white/8 bg-white/4 px-3 py-2">
+                <p className="app-eyebrow">Latest</p>
+                <p className="mt-1 text-sm font-medium text-white">
+                  {formatVersion(data?.latestVersion ?? data?.currentVersion ?? null)}
+                </p>
+              </div>
+            </div>
 
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="flex-1"
-            onClick={() => void refetch()}
-            disabled={isFetching}
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => setDialogOpen(true)}
-            disabled={!canOpenChangelog}
-          >
-            <ArrowUpCircle className="h-4 w-4" />
-            Changelog
-          </Button>
-        </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="flex-1"
+                onClick={(e) => { e.stopPropagation(); void refetch(); }}
+                disabled={isFetching}
+              >
+                <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={(e) => { e.stopPropagation(); setDialogOpen(true); }}
+                disabled={!canOpenChangelog}
+              >
+                <ArrowUpCircle className="h-4 w-4" />
+                Changelog
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {data && canOpenChangelog ? (

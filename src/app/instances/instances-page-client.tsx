@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { InstanceCard } from "@/components/instances/instance-card";
@@ -75,11 +75,26 @@ export default function InstancesPage() {
           <Spinner />
         </div>
       ) : !data?.length ? (
-        <div className="app-empty-state py-16 text-center">
-          <p className="text-base font-medium text-slate-100">No instances configured yet</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Add an instance to start tracking queue health, request activity, quality drift, and fixable issues.
-          </p>
+        <div className="app-empty-state flex flex-col items-center gap-4 py-16 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+            <Server className="h-6 w-6 text-slate-500" />
+          </div>
+          <div>
+            <p className="text-base font-medium text-slate-100">No instances configured yet</p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
+              Connect a Sonarr, Radarr, or Overseerr instance to start tracking queue health, quality drift, and fixable issues.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Add your first instance
+          </Button>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">

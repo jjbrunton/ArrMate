@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils/cn";
 
 const variants = {
   default:
-    "border border-cyan-300/25 bg-[var(--accent)] text-slate-950 shadow-[0_18px_40px_rgba(14,165,233,0.2)] hover:-translate-y-0.5 hover:bg-[var(--accent-strong)] hover:text-white",
+    "border border-cyan-300/25 bg-[var(--accent)] text-slate-950 shadow-[0_0_20px_rgba(67,210,255,0.25),0_18px_40px_rgba(14,165,233,0.2)] hover:-translate-y-0.5 hover:bg-[var(--accent-strong)] hover:text-white hover:shadow-[0_0_28px_rgba(67,210,255,0.35),0_18px_40px_rgba(14,165,233,0.25)]",
   destructive:
     "border border-rose-300/20 bg-rose-500/90 text-white shadow-[0_18px_40px_rgba(244,63,94,0.18)] hover:-translate-y-0.5 hover:bg-rose-500",
   outline:

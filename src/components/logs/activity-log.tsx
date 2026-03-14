@@ -32,42 +32,49 @@ interface LogEntry {
 
 const actionConfig: Record<
   string,
-  { label: string; icon: typeof Server; color: string }
+  { label: string; icon: typeof Server; color: string; accent: string }
 > = {
   queue_sync: {
     label: "Queue Synced",
     icon: RefreshCw,
     color: "text-cyan-200",
+    accent: "bg-cyan-400",
   },
   queue_sync_failed: {
     label: "Queue Sync Failed",
     icon: XCircle,
     color: "text-rose-200",
+    accent: "bg-rose-400",
   },
   issues_detected: {
     label: "Issues Detected",
     icon: AlertTriangle,
     color: "text-amber-200",
+    accent: "bg-amber-400",
   },
   health_restored: {
     label: "Health Restored",
     icon: ShieldCheck,
     color: "text-emerald-200",
+    accent: "bg-emerald-400",
   },
   health_degraded: {
     label: "Health Degraded",
     icon: ShieldAlert,
     color: "text-rose-200",
+    accent: "bg-rose-400",
   },
   dismiss_issue: {
     label: "Issue Dismissed",
     icon: Eye,
     color: "text-slate-300",
+    accent: "bg-slate-500",
   },
   execute_fix: {
     label: "Fix Executed",
     icon: Wrench,
     color: "text-violet-200",
+    accent: "bg-violet-400",
   },
 };
 
@@ -77,6 +84,7 @@ function getActionDisplay(action: string) {
       label: action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
       icon: Server,
       color: "text-slate-300",
+      accent: "bg-slate-500",
     }
   );
 }
@@ -168,7 +176,9 @@ function LogRow({ entry }: { entry: LogEntry }) {
 
   return (
     <div className="app-table-row group flex items-start gap-3 px-4 py-3 transition-colors">
-      <div className="flex w-20 shrink-0 items-center gap-2 pt-0.5">
+      <div className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full opacity-70", display.accent)} />
+
+      <div className="flex w-[4.5rem] shrink-0 items-center gap-2 pt-0.5">
         <span className="font-mono text-xs text-slate-600">
           {formatTime(entry.createdAt)}
         </span>

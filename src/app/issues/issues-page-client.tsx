@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCheck } from "lucide-react";
+import { CheckCheck, ShieldCheck } from "lucide-react";
 import { IssueCard, type IssueData } from "@/components/issues/issue-card";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
@@ -129,11 +129,16 @@ export default function IssuesPage() {
           <Spinner />
         </div>
       ) : !filtered?.length ? (
-        <div className="app-empty-state py-16 text-center">
-          <p className="text-base font-medium text-slate-100">No issues found</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Issues will appear here when problems are detected in your queues.
-          </p>
+        <div className="app-empty-state flex flex-col items-center gap-4 py-16 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-300/15 bg-emerald-400/10">
+            <ShieldCheck className="h-6 w-6 text-emerald-300" />
+          </div>
+          <div>
+            <p className="text-base font-medium text-slate-100">All clear</p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
+              No issues detected across your instances. Problems will appear here when they arise.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
