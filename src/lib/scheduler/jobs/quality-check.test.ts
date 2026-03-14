@@ -10,6 +10,7 @@ let sqlite: InstanceType<typeof Database>;
 const mockSearchForUpgrade = vi.fn();
 const mockGetAllCutoffUnmetItems = vi.fn();
 const mockGetQualityProfiles = vi.fn();
+const mockGetActiveSearchCommands = vi.fn();
 const mockWriteAuditLog = vi.fn();
 const mockRecordQualitySearch = vi.fn();
 const mockSyncQualitySnapshot = vi.fn();
@@ -44,6 +45,7 @@ vi.mock("../../arr-client/client", () => ({
   ArrClient: class {
     getAllCutoffUnmetItems = mockGetAllCutoffUnmetItems;
     getQualityProfiles = mockGetQualityProfiles;
+    getActiveSearchCommands = mockGetActiveSearchCommands;
     searchForUpgrade = mockSearchForUpgrade;
   },
 }));
@@ -92,6 +94,7 @@ describe("runQualityChecks", () => {
     setupDb();
     mockGetAllCutoffUnmetItems.mockReset();
     mockGetQualityProfiles.mockReset();
+    mockGetActiveSearchCommands.mockReset();
     mockSearchForUpgrade.mockReset();
     mockWriteAuditLog.mockReset();
     mockRecordQualitySearch.mockReset();
@@ -104,6 +107,7 @@ describe("runQualityChecks", () => {
       await fn();
       return true;
     });
+    mockGetActiveSearchCommands.mockResolvedValue([]);
     vi.useRealTimers();
   });
 
@@ -264,6 +268,46 @@ describe("runQualityChecks", () => {
         dueCount: 1,
       },
       "Skipping upgrade search requests because another quality search is already running",
+    );
+  });
+
+  it("skips sending upgrade searches when Arr already has active search commands", async () => {
+    const instance = testDb.insert(schema.instances).values({
+      name: "Sonarr",
+      type: "sonarr",
+      baseUrl: "http://localhost:8989",
+      apiKey: "secret",
+      qualityCheckMaxItems: 2,
+    }).returning().get()!;
+
+    mockGetAllCutoffUnmetItems.mockResolvedValue([
+      { id: 101, lastSearchTime: null },
+    ]);
+    mockGetQualityProfiles.mockResolvedValue([]);
+    mockGetDueQualitySearchRecords.mockReturnValue([
+      { id: 101, lastSearchTime: null },
+    ]);
+    mockGetActiveSearchCommands.mockResolvedValue([
+      { id: 99, name: "EpisodeSearch", commandName: "Episode Search", status: "started" },
+    ]);
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-08T12:00:00.000Z"));
+
+    const { runQualityChecks } = await import("./quality-check");
+    await runQualityChecks(instance);
+
+    expect(mockGetActiveSearchCommands).toHaveBeenCalledTimes(1);
+    expect(mockSearchForUpgrade).not.toHaveBeenCalled();
+    expect(mockRecordQualitySearch).not.toHaveBeenCalled();
+    expect(mockLoggerInfo).toHaveBeenCalledWith(
+      {
+        instanceId: instance.id,
+        activeSearchCommands: [
+          { id: 99, name: "EpisodeSearch", commandName: "Episode Search", status: "started" },
+        ],
+      },
+      "Skipping upgrade search requests because Arr is already processing search commands",
     );
   });
 });

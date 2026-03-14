@@ -59,6 +59,18 @@ export async function runQualityChecks(instance: Instance) {
 
         if (lockedDueRecords.length === 0) return;
 
+        const activeSearchCommands = await client.getActiveSearchCommands();
+        if (activeSearchCommands.length > 0) {
+          log.info(
+            {
+              instanceId: instance.id,
+              activeSearchCommands,
+            },
+            "Skipping upgrade search requests because Arr is already processing search commands",
+          );
+          return;
+        }
+
         const itemIds = lockedDueRecords.map((record) => record.id);
         const requestedItems = lockedDueRecords.map((record) => ({
           id: record.id,

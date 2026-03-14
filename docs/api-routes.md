@@ -30,7 +30,7 @@ All routes except `POST /api/auth/setup`, `POST /api/auth/login`, and `POST /api
 | POST | `/api/instances/[id]/sync-requests` | Trigger a manual Overseerr request import (409 if another request sync is already running) |
 | GET | `/api/instances/[id]/job-status` | Get running job status `{ running: string[], busy: boolean }` |
 | GET | `/api/instances/[id]/cutoff` | Get the Media Management tab data from local cache only: paged below-cutoff rows, cached wanted/current quality, per-item upgrade-search history, recent upgrade-search batches with resolved item labels, and a local summary split of `healthy`, `wrongQuality`, and `missing` |
-| POST | `/api/instances/[id]/cutoff/search` | Trigger an upgrade search for selected cutoff-unmet items that have not been searched in the last 24 hours; skipped item IDs are returned so the UI can explain local cooldown no-ops, and overlapping search requests return 409 |
+| POST | `/api/instances/[id]/cutoff/search` | Trigger an upgrade search for selected cutoff-unmet items that have not been searched in the last 24 hours; skipped item IDs are returned so the UI can explain local cooldown no-ops, and the route returns 409 when ArrMate already has a quality search running or Sonarr/Radarr already has active search commands in its own command queue |
 
 ## Issues
 

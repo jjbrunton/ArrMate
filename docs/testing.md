@@ -21,7 +21,7 @@ src/lib/
 │   ├── request.test.ts        # Origin and client-IP helpers
 │   └── session.test.ts        # Cookie helpers and token hashing
 ├── arr-client/
-│   ├── client.test.ts          # ArrClient HTTP methods, pagination, error handling
+│   ├── client.test.ts          # ArrClient HTTP methods, pagination, active search-command filtering, error handling
 │   └── errors.test.ts          # Error class properties
 ├── instances/
 │   ├── connection.test.ts      # Type-aware connection verification routing
@@ -59,7 +59,7 @@ src/lib/
 │   ├── index.test.ts          # Immediate priming for newly created instances vs steady-state startup scheduling
 │   ├── job-tracker.test.ts    # Running-state and concurrency guards, including shared quality-search locks
 │   └── jobs/
-│       ├── quality-check.test.ts # Upgrade-search cooldown, shared search locking, and per-run quality batch behavior
+│       ├── quality-check.test.ts # Upgrade-search cooldown, shared search locking, active Arr command backoff, and per-run quality batch behavior
 │       └── sync-media-cache.test.ts # Empty-response guards prevent cache wipes
 ├── security/
 │   └── security.test.ts       # Security regression tests (encryption, auth bypass, key leakage, sessions, error messages)

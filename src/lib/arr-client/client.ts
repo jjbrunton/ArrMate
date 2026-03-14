@@ -1,8 +1,9 @@
 import { ArrApiError, ArrConnectionError } from "./errors";
-import type { QueuePageResponse, QueueRecord, SystemStatus, HealthCheck, Movie, ManualImportItem, ManualImportCommand, CutoffUnmetResponse, CommandResponse, HistoryRecord, HistoryResponse, Series, Episode, CutoffUnmetRecord, QualityProfile } from "./types";
+import type { QueuePageResponse, QueueRecord, SystemStatus, HealthCheck, Movie, ManualImportItem, ManualImportCommand, CutoffUnmetResponse, CommandResponse, CommandRecord, HistoryRecord, HistoryResponse, Series, Episode, CutoffUnmetRecord, QualityProfile } from "./types";
 
 const TIMEOUT_MS = 30_000;
 const LONG_TIMEOUT_MS = 120_000;
+const TERMINAL_COMMAND_STATUSES = new Set(["completed", "failed", "aborted"]);
 
 export class ArrClient {
   private baseUrl: string;
@@ -203,6 +204,22 @@ export class ArrClient {
 
   async getQualityProfiles(): Promise<QualityProfile[]> {
     return this.request<QualityProfile[]>("GET", "/qualityprofile");
+  }
+
+  async getCommands(): Promise<CommandRecord[]> {
+    return this.request<CommandRecord[]>("GET", "/command");
+  }
+
+  async getActiveSearchCommands(): Promise<CommandRecord[]> {
+    const commands = await this.getCommands();
+
+    return commands.filter((command) => {
+      const status = command.status.toLowerCase();
+      if (TERMINAL_COMMAND_STATUSES.has(status)) return false;
+
+      const label = `${command.name ?? ""} ${command.commandName ?? ""}`.toLowerCase();
+      return label.includes("search");
+    });
   }
 
   async searchForUpgrade(ids: number[]): Promise<CommandResponse> {

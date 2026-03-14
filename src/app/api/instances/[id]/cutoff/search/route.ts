@@ -19,6 +19,10 @@ const bodySchema = z.object({
 });
 const log = createLogger("quality-search");
 
+function getActiveSearchMessage(instanceType: "radarr" | "sonarr") {
+  return `${instanceType === "radarr" ? "Radarr" : "Sonarr"} is already processing search commands`;
+}
+
 export const POST = withApiAuth(async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -56,6 +60,7 @@ export const POST = withApiAuth(async (
           command: Awaited<ReturnType<ArrClient["searchForUpgrade"]>>;
         }
       | null = null;
+    let activeSearchCommands: Awaited<ReturnType<ArrClient["getActiveSearchCommands"]>> = [];
 
     const ran = await runExclusive(instance.id, "quality-search", async () => {
       const now = new Date();
@@ -78,6 +83,26 @@ export const POST = withApiAuth(async (
 
       const apiKey = decrypt(instance.apiKey);
       const client = new ArrClient(instance.baseUrl, apiKey, instanceType);
+      activeSearchCommands = await client.getActiveSearchCommands();
+      if (activeSearchCommands.length > 0) {
+        log.info(
+          {
+            instanceId: instance.id,
+            source: "user",
+            activeSearchCommands,
+            skippedIds,
+          },
+          "Skipping upgrade search requests because Arr is already processing search commands",
+        );
+        responseData = {
+          sent: false,
+          searchedIds: [],
+          skippedIds,
+          command: null,
+        };
+        return;
+      }
+
       const requestedItems = getQualitySearchLogItems(instance.id, instanceType, searchableIds);
       log.info(
         {
@@ -102,6 +127,10 @@ export const POST = withApiAuth(async (
 
     if (!ran) {
       return error("A quality search is already running for this instance", 409);
+    }
+
+    if (activeSearchCommands.length > 0) {
+      return error(getActiveSearchMessage(instanceType), 409);
     }
 
     return success(responseData ?? {

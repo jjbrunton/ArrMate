@@ -169,4 +169,32 @@ describe("ArrClient", () => {
       );
     });
   });
+
+  describe("getActiveSearchCommands", () => {
+    it("returns only non-terminal active search commands", async () => {
+      mockFetch([
+        { id: 1, name: "MoviesSearch", commandName: "MoviesSearch", status: "queued" },
+        { id: 2, name: "RefreshMovie", commandName: "RefreshMovie", status: "started" },
+        { id: 3, name: "MoviesSearch", commandName: "MoviesSearch", status: "completed" },
+      ]);
+
+      await expect(client.getActiveSearchCommands()).resolves.toEqual([
+        { id: 1, name: "MoviesSearch", commandName: "MoviesSearch", status: "queued" },
+      ]);
+    });
+
+    it("detects sonarr search commands by either name field", async () => {
+      const sonarrClient = new ArrClient("http://localhost:8989", "key", "sonarr");
+      mockFetch([
+        { id: 4, name: "SeriesSearch", commandName: "Series Search", status: "started" },
+        { id: 5, commandName: "EpisodeSearch", status: "queued" },
+        { id: 6, name: "RssSync", commandName: "Rss Sync", status: "queued" },
+      ]);
+
+      await expect(sonarrClient.getActiveSearchCommands()).resolves.toEqual([
+        { id: 4, name: "SeriesSearch", commandName: "Series Search", status: "started" },
+        { id: 5, commandName: "EpisodeSearch", status: "queued" },
+      ]);
+    });
+  });
 });

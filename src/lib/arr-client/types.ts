@@ -209,3 +209,11 @@ export interface CommandResponse {
   status: string;
   started?: string;
 }
+
+export interface CommandRecord {
+  id: number;
+  name?: string;
+  commandName?: string;
+  status: string;
+  started?: string;
+}

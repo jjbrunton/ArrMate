@@ -17,6 +17,8 @@ export function createMockArrClient() {
     getCutoffUnmet: vi.fn().mockResolvedValue({ page: 1, pageSize: 20, totalRecords: 0, records: [] }),
     getAllCutoffUnmetItems: vi.fn().mockResolvedValue([]),
     getQualityProfiles: vi.fn().mockResolvedValue([]),
+    getCommands: vi.fn().mockResolvedValue([]),
+    getActiveSearchCommands: vi.fn().mockResolvedValue([]),
     searchForUpgrade: vi.fn().mockResolvedValue({ id: 1, name: "Test", commandName: "Test", status: "queued" }),
   };
 }
